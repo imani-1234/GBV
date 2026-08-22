@@ -135,9 +135,12 @@ class ReportViewSet(AuditLogMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
         report = self.get_object()
+        if report.status == Report.Status.SUBMITTED:
+            serializer = ReportDetailSerializer(report, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
         if report.status != Report.Status.DRAFT:
             return Response(
-                {"error": "Only draft reports can be submitted"},
+                {"error": "This report cannot be submitted in its current state"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         report.status = Report.Status.SUBMITTED

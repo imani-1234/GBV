@@ -1,4 +1,7 @@
 from django.contrib.auth import get_user_model
+import logging
+
+from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
@@ -9,8 +12,26 @@ from apps.reports.models import Evidence, Report
 
 User = get_user_model()
 
+logger = logging.getLogger(__name__)
+
 _old_case_values = {}
 _old_report_statuses = {}
+
+
+def _dispatch_notification_email(notification_id, send_sync=False):
+    """Deliver email without allowing broker/email outages to break API writes."""
+    from apps.notifications.tasks import send_notification_email
+
+    try:
+        if send_sync:
+            send_notification_email(str(notification_id))
+        else:
+            send_notification_email.delay(str(notification_id))
+    except Exception:
+        logger.exception(
+            "Notification email dispatch failed for %s; notification remains stored for later retry",
+            notification_id,
+        )
 
 
 def _create_notification(recipient_user, notification_type, payload, send_sync=False):
@@ -19,12 +40,10 @@ def _create_notification(recipient_user, notification_type, payload, send_sync=F
         notification_type=notification_type,
         payload=payload,
     )
-    from apps.notifications.tasks import send_notification_email
 
-    if send_sync:
-        send_notification_email(str(notification.id))
-    else:
-        send_notification_email.delay(str(notification.id))
+    transaction.on_commit(
+        lambda: _dispatch_notification_email(notification.id, send_sync=send_sync),
+    )
     return notification
 
 

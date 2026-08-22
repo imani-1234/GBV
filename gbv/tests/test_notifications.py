@@ -184,7 +184,7 @@ class TestReportSubmittedSignal:
 # ── Signal: Critical Incident ──────────────────────────────────────
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestCriticalIncidentSignal:
     def test_critical_creates_alert_synchronously(self, draft_report, admin_user):
         draft_report.priority = Report.Priority.CRITICAL
@@ -267,7 +267,7 @@ class TestStatusChangedSignal:
 # ── Signal: Message Sent (officer replied / reporter replied) ──────
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestMessageSignal:
     def test_officer_replied_notification(self, conversation, case, officer, reporter):
         Message.objects.create(
@@ -507,7 +507,7 @@ class TestMarkAllReadEndpoint:
 # ── Signal: Integration with existing views ─────────────────────────
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestSignalViewIntegration:
     """Test that signal-triggered notifications fire when views create/update objects."""
 
@@ -615,3 +615,23 @@ class TestNotificationModel:
             payload={},
         )
         assert str(notif) is not None
+
+
+@pytest.mark.django_db(transaction=True)
+class TestNotificationDispatchResilience:
+    def test_broker_failure_does_not_abort_report_submission(self, draft_report, officer):
+        draft_report.status = Report.Status.SUBMITTED
+        draft_report.case_number = "GBV-2026-000099"
+
+        with patch(
+            "apps.notifications.tasks.send_notification_email.delay",
+            side_effect=RuntimeError("Redis unavailable"),
+        ):
+            draft_report.save()
+
+        assert Notification.objects.filter(
+            recipient_user=officer,
+            notification_type=Notification.NotificationType.NEW_REPORT_OFFICER,
+        ).exists()
+        draft_report.refresh_from_db()
+        assert draft_report.status == Report.Status.SUBMITTED

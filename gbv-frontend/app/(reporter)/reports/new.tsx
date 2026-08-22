@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { isAxiosError } from "axios";
 import {
   View, Text, Pressable, ScrollView, TextInput, StyleSheet,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
@@ -181,7 +182,21 @@ export default function ReportWizard() {
       }
 
       setUploadProgress({});
-      await reportsApi.submit(report.id);
+      try {
+        await reportsApi.submit(report.id);
+      } catch (error) {
+        // Older backend versions could persist SUBMITTED before a Celery
+        // notification dispatch failed. Confirm state before showing failure.
+        const status = isAxiosError(error) ? error.response?.status : undefined;
+        if (status && status >= 500) {
+          const current = await reportsApi.get(report.id);
+          if (current.status === "submitted") {
+            router.replace(`/reports/success?caseNumber=${current.case_number || report.case_number || ""}&reportId=${current.id}`);
+            return;
+          }
+        }
+        throw error;
+      }
       router.replace(`/reports/success?caseNumber=${report.case_number || ""}&reportId=${report.id}`);
     } catch (err) {
       Alert.alert(

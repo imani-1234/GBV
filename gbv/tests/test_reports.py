@@ -274,16 +274,18 @@ class TestSubmit:
         assert resp.data["case_number"] is not None
         assert resp.data["case_number"].startswith("GBV-")
 
-    def test_submit_twice_returns_error(
+    def test_submit_twice_is_idempotent(
         self, api_client, reporter, report_payload
     ):
         authenticate(api_client, reporter)
         create_resp = api_client.post(REPORTS_URL, report_payload, format="json")
         report_id = create_resp.data["id"]
-        api_client.post(f"{REPORTS_URL}{report_id}/submit/")
+        first = api_client.post(f"{REPORTS_URL}{report_id}/submit/")
         resp = api_client.post(f"{REPORTS_URL}{report_id}/submit/")
-        assert resp.status_code == status.HTTP_400_BAD_REQUEST
-        assert "draft" in resp.data["error"]
+        assert first.status_code == status.HTTP_200_OK
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["status"] == "submitted"
+        assert resp.data["case_number"] == first.data["case_number"]
 
     def test_submit_auto_suggests_priority(
         self, api_client, reporter, category
