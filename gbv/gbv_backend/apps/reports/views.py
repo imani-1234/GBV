@@ -1,4 +1,8 @@
 from rest_framework import status, viewsets
+import os
+
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -42,6 +46,7 @@ class ReportViewSet(AuditLogMixin, viewsets.ModelViewSet):
         "destroy": "close",
         "submit": "submit",
         "upload_evidence": "evidence_upload",
+        "download_evidence": "read_own",
     }
 
     def get_serializer_class(self):
@@ -196,6 +201,27 @@ class ReportViewSet(AuditLogMixin, viewsets.ModelViewSet):
         )
         serializer = EvidenceSerializer(evidence, context={"request": request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(summary="Download evidence from an authorised report")
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"evidence/(?P<evidence_id>[^/.]+)/download",
+    )
+    def download_evidence(self, request, pk=None, evidence_id=None):
+        report = self.get_object()
+        evidence = get_object_or_404(Evidence, pk=evidence_id, report=report)
+        _audit_log(
+            request,
+            "EVIDENCE_DOWNLOADED",
+            instance=report,
+            metadata={"evidence_id": str(evidence.id)},
+        )
+        return FileResponse(
+            evidence.file.open("rb"),
+            as_attachment=True,
+            filename=os.path.basename(evidence.file.name),
+        )
 
 
 @extend_schema(tags=["reports"])

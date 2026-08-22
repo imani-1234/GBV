@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -424,6 +425,56 @@ class TestEvidenceUpload:
         detail_resp = api_client.get(f"{REPORTS_URL}{report_id}/")
         assert len(detail_resp.data["evidence"]) == 1
         assert detail_resp.data["evidence"][0]["file_type"] == "image"
+
+
+@pytest.mark.django_db
+class TestEvidenceDownload:
+    def test_report_owner_can_download_evidence(self, api_client, reporter, report_payload):
+        authenticate(api_client, reporter)
+        create_resp = api_client.post(REPORTS_URL, report_payload, format="json")
+        report_id = create_resp.data["id"]
+        upload_resp = api_client.post(
+            f"{REPORTS_URL}{report_id}/evidence/",
+            {"file": SimpleUploadedFile("statement.pdf", b"evidence-bytes", content_type="application/pdf")},
+            format="multipart",
+        )
+
+        download_resp = api_client.get(
+            f"{REPORTS_URL}{report_id}/evidence/{upload_resp.data['id']}/download/"
+        )
+
+        assert download_resp.status_code == status.HTTP_200_OK
+        assert "attachment" in download_resp["Content-Disposition"]
+        assert b"".join(download_resp.streaming_content) == b"evidence-bytes"
+
+    def test_other_reporter_cannot_download_evidence(self, api_client, reporter, category):
+        report = Report.objects.create(
+            reporter=reporter,
+            category=category,
+            incident_date="2026-07-22",
+            campus="Main Campus",
+            department="Engineering",
+            location_text="Building A, Room 101",
+            description="A test incident report",
+        )
+        evidence = Evidence.objects.create(
+            report=report,
+            file=SimpleUploadedFile("statement.pdf", b"private-bytes", content_type="application/pdf"),
+            file_type="pdf",
+        )
+        other_reporter = User.objects.create_user(
+            email="other-reporter@test.com",
+            full_name="Other Reporter",
+            password="pass1234",
+            role=User.Role.REPORTER,
+        )
+        authenticate(api_client, other_reporter)
+
+        download_resp = api_client.get(
+            f"{REPORTS_URL}{report.id}/evidence/{evidence.id}/download/"
+        )
+
+        assert download_resp.status_code == status.HTTP_404_NOT_FOUND
 
 
 # ── Anonymous Reporter Flow ────────────────────────────────────────
