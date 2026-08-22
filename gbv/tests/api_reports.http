@@ -1,0 +1,250 @@
+### Variables
+@baseUrl = http://localhost:8000/api/v1
+
+### ── Auth ─────────────────────────────────────────────────────────
+
+### Register a reporter
+POST {{baseUrl}}/auth/register/
+Content-Type: application/json
+
+{
+    "email": "reporter@example.com",
+    "full_name": "Jane Reporter",
+    "phone_number": "+254700000000",
+    "password": "strongpass123"
+}
+
+### Login as reporter
+# @name reporterLogin
+POST {{baseUrl}}/auth/token/
+Content-Type: application/json
+
+{
+    "email": "reporter@example.com",
+    "password": "strongpass123"
+}
+
+### Save reporter token
+@reporterToken = {{reporterLogin.response.body.access}}
+
+### Register anonymous reporter
+# @name anonRegister
+POST {{baseUrl}}/auth/anonymous/register/
+Content-Type: application/json
+
+{
+    "password": "anonpass456"
+}
+
+### Save reporter code
+@anonCode = {{anonRegister.response.body.reporter_code}}
+
+### Login as anonymous
+# @name anonLogin
+POST {{baseUrl}}/auth/anonymous/login/
+Content-Type: application/json
+
+{
+    "reporter_code": "{{anonCode}}",
+    "password": "anonpass456"
+}
+
+### Save anonymous token
+@anonToken = {{anonLogin.response.body.access}}
+
+### ── Incident Categories ──────────────────────────────────────────
+
+### List categories
+GET {{baseUrl}}/categories/
+
+### ── Reports (Reporter) ──────────────────────────────────────────
+
+### Create a draft report
+# @name createDraft
+POST {{baseUrl}}/reports/
+Content-Type: application/json
+Authorization: Bearer {{reporterToken}}
+
+{
+    "category": "REPLACE_WITH_CATEGORY_UUID",
+    "incident_date": "2026-07-22",
+    "campus": "Main Campus",
+    "department": "Computer Science",
+    "location_text": "Science Building, Room 301",
+    "description": "I was verbally harassed by a colleague during a faculty meeting.",
+    "victim_is_reporter": true,
+    "offender_known": true,
+    "offender_details": {
+        "name": "Dr. Smith",
+        "relationship": "colleague",
+        "department": "Computer Science"
+    },
+    "witnesses": [
+        {"name": "Alice", "email": "alice@university.edu"}
+    ],
+    "needs_immediate_help": false,
+    "consent_to_contact": true
+}
+
+### Save draft ID
+@draftId = {{createDraft.response.body.id}}
+
+### Read draft
+GET {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{reporterToken}}
+
+### Update draft
+PATCH {{baseUrl}}/reports/{{draftId}}/
+Content-Type: application/json
+Authorization: Bearer {{reporterToken}}
+
+{
+    "description": "Updated description with more details about the incident."
+}
+
+### Submit draft
+# @name submitReport
+POST {{baseUrl}}/reports/{{draftId}}/submit/
+Authorization: Bearer {{reporterToken}}
+
+### Save case number
+@caseNumber = {{submitReport.response.body.case_number}}
+
+### Read submitted report
+GET {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{reporterToken}}
+
+### Try to update submitted report (should fail)
+PATCH {{baseUrl}}/reports/{{draftId}}/
+Content-Type: application/json
+Authorization: Bearer {{reporterToken}}
+
+{
+    "description": "Should not work"
+}
+
+### ── Evidence Upload ──────────────────────────────────────────────
+
+### Upload evidence (image)
+POST {{baseUrl}}/reports/{{draftId}}/evidence/
+Authorization: Bearer {{reporterToken}}
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="file"; filename="screenshot.png"
+Content-Type: image/png
+
+< ./screenshot.png
+------boundary--
+
+### Upload evidence (PDF)
+POST {{baseUrl}}/reports/{{draftId}}/evidence/
+Authorization: Bearer {{reporterToken}}
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="file"; filename="report.pdf"
+Content-Type: application/pdf
+
+< ./report.pdf
+------boundary--
+
+### Read report with evidence
+GET {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{reporterToken}}
+
+### ── Reports (Anonymous) ──────────────────────────────────────────
+
+### Create draft as anonymous
+# @name anonDraft
+POST {{baseUrl}}/reports/
+Content-Type: application/json
+Authorization: Bearer {{anonToken}}
+
+{
+    "category": "REPLACE_WITH_CATEGORY_UUID",
+    "incident_date": "2026-07-23",
+    "campus": "West Campus",
+    "department": "Law",
+    "location_text": "Library, 2nd Floor",
+    "description": "Anonymous report of an incident in the library.",
+    "needs_immediate_help": true,
+    "consent_to_contact": false
+}
+
+### Save anonymous draft ID
+@anonDraftId = {{anonDraft.response.body.id}}
+
+### Read anonymous draft
+GET {{baseUrl}}/reports/{{anonDraftId}}/
+Authorization: Bearer {{anonToken}}
+
+### Submit anonymous draft
+POST {{baseUrl}}/reports/{{anonDraftId}}/submit/
+Authorization: Bearer {{anonToken}}
+
+### ── Reports (Officer) ────────────────────────────────────────────
+
+### Login as officer
+# @name officerLogin
+POST {{baseUrl}}/auth/token/
+Content-Type: application/json
+
+{
+    "email": "officer@university.edu",
+    "password": "officerpass123"
+}
+
+@officerToken = {{officerLogin.response.body.access}}
+
+### List all reports (officer)
+GET {{baseUrl}}/reports/
+Authorization: Bearer {{officerToken}}
+
+### Read specific report
+GET {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{officerToken}}
+
+### Update report status (officer)
+PATCH {{baseUrl}}/reports/{{draftId}}/
+Content-Type: application/json
+Authorization: Bearer {{officerToken}}
+
+{
+    "status": "under_review"
+}
+
+### Assign report to officer
+PATCH {{baseUrl}}/reports/{{draftId}}/
+Content-Type: application/json
+Authorization: Bearer {{officerToken}}
+
+{
+    "assigned_officer": "OFFICER_USER_UUID"
+}
+
+### ── Reports (Admin) ──────────────────────────────────────────────
+
+### Login as admin
+# @name adminLogin
+POST {{baseUrl}}/auth/token/
+Content-Type: application/json
+
+{
+    "email": "admin@university.edu",
+    "password": "adminpass123"
+}
+
+@adminToken = {{adminLogin.response.body.access}}
+
+### List all reports (admin)
+GET {{baseUrl}}/reports/
+Authorization: Bearer {{adminToken}}
+
+### Read any report
+GET {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{adminToken}}
+
+### Close a report
+DELETE {{baseUrl}}/reports/{{draftId}}/
+Authorization: Bearer {{adminToken}}

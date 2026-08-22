@@ -1,0 +1,79 @@
+{
+  "expo": {
+    "name": "Imani — GBV Reporting",
+    "slug": "gbv-reporting-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "gbv-reporting",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#6C63FF"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.gbv.imani",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Imani uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case.",
+        "NSPhotoLibraryUsageDescription": "Imani accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
+        "NSPhotoLibraryAddUsageDescription": "Imani can save report attachments to your photo library for your personal records.",
+        "NSDocumentsFolderUsageDescription": "Imani accesses documents you choose to attach as supporting evidence to your report."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#6C63FF",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "org.gbv.imani",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "blockedPermissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "SYSTEM_ALERT_WINDOW"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-image",
+      "expo-font",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Imani accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
+          "cameraPermission": "Imani uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case."
+        }
+      ],
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "sentry": {
+        "dsn": "https://examplePublicKey@o0.ingest.sentry.io/0"
+      }
+    }
+  }
+}
