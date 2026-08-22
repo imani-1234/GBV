@@ -7,9 +7,20 @@ export interface CreateCategoryPayload {
   default_priority: string;
 }
 
+export function normalizeCategoryList(payload: unknown): IncidentCategory[] {
+  if (Array.isArray(payload)) return payload as IncidentCategory[];
+
+  if (payload && typeof payload === "object") {
+    const results = (payload as { results?: unknown }).results;
+    if (Array.isArray(results)) return results as IncidentCategory[];
+  }
+
+  return [];
+}
+
 export const categoriesApi = {
   list: () =>
-    apiClient.get<IncidentCategory[]>("/categories/").then((r) => r.data),
+    apiClient.get<unknown>("/categories/").then((r) => normalizeCategoryList(r.data)),
 
   get: (id: string) =>
     apiClient.get<IncidentCategory>(`/categories/${id}/`).then((r) => r.data),

@@ -114,7 +114,6 @@ export default function MyReportsScreen() {
         <FlashList
           data={reports}
           renderItem={renderItem}
-          estimatedItemSize={120}
           keyExtractor={(item: Report) => item.id}
           contentContainerStyle={{ padding: 16 }}
           refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={scheme.primary} />}

@@ -77,11 +77,12 @@ export default function ReportWizard() {
   // the real backend UUIDs (the API rejects fake slug ids with a 400).
   const [categories, setCategories] = useState<IncidentCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const categoryOptions = Array.isArray(categories) ? categories : [];
 
   useEffect(() => {
     let mounted = true;
     categoriesApi.list()
-      .then((cats) => { if (mounted) setCategories(cats); })
+      .then((cats) => { if (mounted) setCategories(Array.isArray(cats) ? cats : []); })
       .catch(() => { if (mounted) setCategories([]); })
       .finally(() => { if (mounted) setCategoriesLoading(false); });
     return () => { mounted = false; };
@@ -211,8 +212,15 @@ export default function ReportWizard() {
           <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Select the category that best describes what happened.</Text>
           {categoriesLoading ? (
             <ActivityIndicator size="large" color={scheme.primary} style={{ marginTop: spacing.xl }} />
+          ) : categoryOptions.length === 0 ? (
+            <View style={[styles.alertCard, { backgroundColor: scheme.warningContainer, borderRadius: borderRadius.md }]}>
+              <Ionicons name="information-circle" size={20} color={scheme.onWarning} />
+              <Text style={[typography.body.small, { color: scheme.onWarning, marginLeft: 8, flex: 1 }]}>
+                Incident types are temporarily unavailable. Please try again shortly or contact the support office if you need immediate help.
+              </Text>
+            </View>
           ) : (
-            categories.map((cat) => (
+            categoryOptions.map((cat) => (
               <Pressable
                 key={cat.id}
                 onPress={() => update("categoryId", cat.id)}
@@ -405,7 +413,7 @@ export default function ReportWizard() {
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.lg }]}>Review & Submit</Text>
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
             <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Type</Text>
-            <Text style={[typography.body.large, { color: scheme.onSurface }]}>{categories.find((c) => c.id === data.categoryId)?.name || "Not selected"}</Text>
+            <Text style={[typography.body.large, { color: scheme.onSurface }]}>{categoryOptions.find((c) => c.id === data.categoryId)?.name || "Not selected"}</Text>
           </Card>
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
             <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Location & Date</Text>

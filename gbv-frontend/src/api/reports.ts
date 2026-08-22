@@ -1,5 +1,9 @@
 import apiClient from "./client";
-import type { Report, PaginatedResponse } from "../types";
+import type { IncidentCategory, Report, PaginatedResponse } from "../types";
+
+type ReportCreatePayload = Omit<Partial<Report>, "category"> & {
+  category?: string | IncidentCategory;
+};
 
 export const reportsApi = {
   list: (params?: Record<string, string>) =>
@@ -8,7 +12,7 @@ export const reportsApi = {
   get: (id: string) =>
     apiClient.get<Report>(`/reports/${id}/`).then((r) => r.data),
 
-  create: (data: Partial<Report>) =>
+  create: (data: ReportCreatePayload) =>
     apiClient.post<Report>("/reports/", data).then((r) => r.data),
 
   update: (id: string, data: Partial<Report>) =>

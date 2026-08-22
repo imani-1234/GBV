@@ -587,7 +587,6 @@ export default function CasesList() {
             data={cases}
             renderItem={renderItem}
             keyExtractor={listKeyExtractor}
-            estimatedItemSize={88}
             contentContainerStyle={{
               padding: spacing.md,
               paddingBottom: insets.bottom + 100,

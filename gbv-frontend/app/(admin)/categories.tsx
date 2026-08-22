@@ -246,7 +246,6 @@ export default function CategoriesScreen() {
           data={categories || []}
           renderItem={({ item }: any) => <CategoryRow item={item} onEdit={handleEdit} onDelete={handleDelete} />}
           keyExtractor={(item: IncidentCategory) => item.id}
-          estimatedItemSize={80}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 100 }}
           refreshing={isRefetching}
           onRefresh={refetch}

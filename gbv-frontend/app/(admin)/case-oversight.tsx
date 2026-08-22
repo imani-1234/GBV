@@ -195,7 +195,6 @@ function AssignOfficerModal({
             <FlashList
               data={officers}
               keyExtractor={(o) => o.id}
-              estimatedItemSize={56}
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => onAssign(item)}
@@ -491,7 +490,6 @@ export default function CaseOversightScreen() {
           data={cases}
           renderItem={({ item }: any) => <CaseRow item={item} onPress={() => setSelectedId(item.id)} />}
           keyExtractor={(item: Case) => item.id}
-          estimatedItemSize={72}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 100 }}
           refreshing={isRefetching}
           onRefresh={refetch}

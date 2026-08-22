@@ -305,7 +305,6 @@ export default function UserManagementScreen() {
           data={users}
           renderItem={({ item }: any) => <UserRow user={item} onDeactivate={handleDeactivate} onReactivate={handleReactivate} />}
           keyExtractor={(item: User) => item.id}
-          estimatedItemSize={80}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 100 }}
           refreshing={isRefetching}
           onRefresh={refetch}

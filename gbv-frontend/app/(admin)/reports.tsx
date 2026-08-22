@@ -145,7 +145,6 @@ export default function AdminReportsScreen() {
           data={reports}
           renderItem={({ item }: any) => <ReportRow report={item} onPress={() => setSelectedId(item.id)} />}
           keyExtractor={(item: Report) => item.id}
-          estimatedItemSize={76}
           contentContainerStyle={{ padding: spacing.md, paddingBottom: insets.bottom + 100 }}
           refreshing={isRefetching}
           onRefresh={refetch}
