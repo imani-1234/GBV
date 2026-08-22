@@ -20,11 +20,12 @@ const TIMELINE_STEPS = [
   { status: "CLOSED", label: "Closed" },
 ];
 
-function getFileTypeIcon(fileType: string): keyof typeof Ionicons.glyphMap {
-  if (fileType.startsWith("image")) return "image-outline";
-  if (fileType.startsWith("video")) return "videocam-outline";
-  if (fileType.startsWith("audio")) return "mic-outline";
-  if (fileType.includes("pdf")) return "document-outline";
+function getFileTypeIcon(fileType?: string | null): keyof typeof Ionicons.glyphMap {
+  const normalized = typeof fileType === "string" ? fileType.toLowerCase() : "";
+  if (normalized.startsWith("image")) return "image-outline";
+  if (normalized.startsWith("video")) return "videocam-outline";
+  if (normalized.startsWith("audio")) return "mic-outline";
+  if (normalized.includes("pdf")) return "document-outline";
   return "document-outline";
 }
 
@@ -79,7 +80,7 @@ export default function ReportDetailScreen() {
               </Text>
             )}
           </View>
-          <Chip label={report.status.replace(/_/g, " ")} variant="filter" selected onPress={() => {}} />
+          <Chip label={String(report.status || "unknown").replace(/_/g, " ")} variant="filter" selected onPress={() => {}} />
         </View>
 
         {c && (
@@ -123,7 +124,7 @@ export default function ReportDetailScreen() {
                 <View key={ev.id} style={[styles.evidenceItem, { backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.md }]}>
                   <Ionicons name={getFileTypeIcon(ev.file_type)} size={20} color={scheme.onSurfaceVariant} />
                   <Text style={[typography.body.medium, { color: scheme.onSurface, marginLeft: 8, flex: 1 }]} numberOfLines={1}>
-                    {ev.file.split("/").pop()}
+                    {typeof ev.file === "string" ? ev.file.split("/").pop() || "Attachment" : "Attachment"}
                   </Text>
                   <Text style={[typography.label.small, { color: scheme.onSurfaceVariant }]}>
                     {new Date(ev.created_at).toLocaleDateString()}

@@ -10,17 +10,17 @@ import {
   Alert,
   ActivityIndicator,
   Animated as RNAnimated,
-  ListRenderItemInfo,
   Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, type FlashListRef, type ListRenderItemInfo } from "@shopify/flash-list";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+// SDK 57 exposes legacy async helpers such as getInfoAsync from this compatibility entrypoint.
+import * as FileSystem from "expo-file-system/legacy";
 import { useFocusEffect } from "expo-router";
 import { messagesApi } from "../../api/messages";
 import { useTheme } from "../../theme/ThemeProvider";
@@ -71,8 +71,8 @@ function isSameDay(a: string, b: string): boolean {
   );
 }
 
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
+function getInitials(name?: string | null): string {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
@@ -116,7 +116,7 @@ function AttachmentPreview({ attachment }: { attachment: MessageAttachment }) {
         style={[styles.attachmentFileName, { color: scheme.onSurfaceVariant }]}
         numberOfLines={1}
       >
-        {attachment.file.split("/").pop()}
+        {typeof attachment.file === "string" ? attachment.file.split("/").pop() || "Attachment" : "Attachment"}
       </Text>
     </View>
   );
@@ -276,7 +276,7 @@ export function ChatThread({ caseId, currentUserRole, headerRight }: ChatThreadP
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const listRef = useRef<FlashList<DisplayMessage>>(null);
+  const listRef = useRef<FlashListRef<DisplayMessage> | null>(null);
   const [text, setText] = useState("");
   const [isFocused, setIsFocused] = useState(true);
   const [renderTick, setRenderTick] = useState(0);
@@ -374,7 +374,9 @@ export function ChatThread({ caseId, currentUserRole, headerRight }: ChatThreadP
 
   const validateFileSize = async (uri: string): Promise<boolean> => {
     try {
-      const info = await FileSystem.getInfoAsync(uri);
+      const getInfoAsync = FileSystem.getInfoAsync;
+      if (typeof getInfoAsync !== "function") return true;
+      const info = await getInfoAsync(uri);
       if (info.exists && info.size && info.size > MAX_FILE_SIZE) {
         Alert.alert(
           "File too large",
@@ -488,7 +490,7 @@ export function ChatThread({ caseId, currentUserRole, headerRight }: ChatThreadP
       const msg = item;
       const allMessages = messagesRef.current;
       const prevMsg = index > 0 ? allMessages[index - 1] : null;
-      const isMe = msg.sender_actor_type === currentUserRole || msg.isPending;
+      const isMe = msg.sender_actor_type === currentUserRole || msg.isPending === true;
       const isFirstInGroup = !shouldGroupWithPrevious(msg, prevMsg);
       const showDateSep = !prevMsg || !isSameDay(msg.sent_at, prevMsg.sent_at);
       const senderName = msg.sender_user?.full_name;
@@ -605,7 +607,6 @@ export function ChatThread({ caseId, currentUserRole, headerRight }: ChatThreadP
           data={messages}
           extraData={renderTick}
           renderItem={renderMessage}
-          estimatedItemSize={80}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={isLoading ? null : renderEmpty}
