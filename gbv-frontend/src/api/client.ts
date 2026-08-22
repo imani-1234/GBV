@@ -57,6 +57,18 @@ apiClient.interceptors.request.use(
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      // Axios inherits the instance JSON header unless it is explicitly removed.
+      // For native FormData uploads, the platform must set multipart/form-data
+      // together with its boundary; keeping application/json causes HTTP 415.
+      if (typeof FormData !== "undefined" && config.data instanceof FormData && config.headers) {
+        if (typeof config.headers.delete === "function") {
+          config.headers.delete("Content-Type");
+        } else {
+          delete config.headers["Content-Type"];
+          delete config.headers["content-type"];
+        }
+      }
     } catch {}
     return config;
   },

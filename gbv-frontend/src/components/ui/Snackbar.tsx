@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Text, Pressable, StyleSheet, Easing } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme/ThemeProvider";
+import type { M3Scheme } from "../../theme/colors";
 
 interface SnackbarAction {
   label: string;
@@ -17,7 +18,7 @@ interface SnackbarProps {
   type?: "info" | "success" | "error" | "warning";
 }
 
-const TYPE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: (s: Record<string, string>) => string }> = {
+const TYPE_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: (s: M3Scheme) => string }> = {
   success: { icon: "checkmark-circle", color: (s) => s.success },
   error: { icon: "alert-circle", color: (s) => s.error },
   warning: { icon: "warning", color: (s) => s.warning },

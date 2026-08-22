@@ -15,6 +15,14 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import { Image } from "expo-image";
+import {
+  getAssetName,
+  getMediaUploadError,
+  getMediaValidationMessage,
+  MAX_MEDIA_SIZE_BYTES,
+  type MediaErrorMessage,
+  type SelectedMedia,
+} from "../../../src/utils/mediaValidation";
 
 function toDateInput(date: Date): string {
   const y = date.getFullYear();
@@ -60,6 +68,7 @@ const initialData: WizardData = {
   evidence: [], consentToContact: false, needsImmediateHelp: false,
 };
 
+
 export default function ReportWizard() {
   const router = useRouter();
   const { draftId } = useLocalSearchParams<{ draftId: string }>();
@@ -72,6 +81,9 @@ export default function ReportWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [mediaError, setMediaError] = useState<MediaErrorMessage | null>(null);
+  const [draftReport, setDraftReport] = useState<{ id: string; caseNumber?: string | null } | null>(null);
+  const [uploadedEvidenceUris, setUploadedEvidenceUris] = useState<string[]>([]);
 
   // Incident categories are server-authoritative: the option cards must use
   // the real backend UUIDs (the API rejects fake slug ids with a 400).
@@ -111,44 +123,64 @@ export default function ReportWizard() {
     }
   };
 
+  const buildReportPayload = () => ({
+    category: data.categoryId,
+    campus: data.campus,
+    department: data.department,
+    location_text: data.locationText,
+    incident_date: toDateInput(data.incidentDate),
+    description: data.description,
+  });
+
   const handleSaveDraft = async () => {
     try {
-      await reportsApi.create({
-        category: data.categoryId,
-        campus: data.campus,
-        department: data.department,
-        location_text: data.locationText,
-        incident_date: toDateInput(data.incidentDate),
-        description: data.description,
-      });
-      Alert.alert("Draft Saved", "Your report has been saved as a draft.");
+      const report = await reportsApi.create(buildReportPayload());
+      setDraftReport({ id: report.id, caseNumber: report.case_number });
+      Alert.alert("Draft Saved", "Your report has been saved securely. You can continue when ready.");
     } catch {
-      Alert.alert("Error", "Failed to save draft. Please try again.");
+      Alert.alert("Could not save draft", "Please check your connection and try again.");
     }
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setMediaError(null);
     try {
-      const report = await reportsApi.create({
-        category: data.categoryId,
-        campus: data.campus,
-        department: data.department,
-        location_text: data.locationText,
-        incident_date: toDateInput(data.incidentDate),
-        description: data.description,
-      });
+      const report = draftReport
+        ? await reportsApi.get(draftReport.id)
+        : await reportsApi.create(buildReportPayload());
+      setDraftReport({ id: report.id, caseNumber: report.case_number });
 
-      for (const file of data.evidence) {
+      const uploadedUris = new Set(uploadedEvidenceUris);
+      const pendingFiles = data.evidence.filter((file) => !uploadedUris.has(file.uri));
+      setUploadProgress(Object.fromEntries(pendingFiles.map((file) => [file.uri, 0])));
+
+      for (const file of pendingFiles) {
         const formData = new FormData();
         formData.append("file", {
           uri: file.uri,
           name: file.name,
           type: file.type,
         } as any);
-        await reportsApi.uploadEvidence(report.id, formData);
+
+        try {
+          await reportsApi.uploadEvidence(report.id, formData);
+          uploadedUris.add(file.uri);
+          setUploadedEvidenceUris(Array.from(uploadedUris));
+          setUploadProgress((current) => ({ ...current, [file.uri]: 100 }));
+        } catch (error) {
+          const uploadError = getMediaUploadError(error);
+          setMediaError({
+            title: uploadError.title,
+            message: `${file.name}: ${uploadError.message}`,
+          });
+          setUploadProgress({});
+          setStep(5);
+          return;
+        }
       }
 
+      setUploadProgress({});
       await reportsApi.submit(report.id);
       router.replace(`/reports/success?caseNumber=${report.case_number || ""}&reportId=${report.id}`);
     } catch (err) {
@@ -161,31 +193,74 @@ export default function ReportWizard() {
     }
   };
 
-  const pickEvidence = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsMultipleSelection: true,
+  const addPickedMedia = (files: SelectedMedia[]) => {
+    const rejected: string[] = [];
+    const accepted = files.filter((file) => {
+      const validationMessage = getMediaValidationMessage(file);
+      if (validationMessage) rejected.push(validationMessage);
+      return !validationMessage;
     });
-    if (!result.canceled) {
-      const newFiles = result.assets.map((a) => ({
-        uri: a.uri, name: a.fileName || `file_${Date.now()}`, type: a.type || "image/jpeg", size: a.fileSize || 0,
-      }));
-      update("evidence", [...data.evidence, ...newFiles]);
+
+    if (accepted.length > 0) {
+      update("evidence", [...data.evidence, ...accepted]);
+    }
+    if (rejected.length > 0) {
+      setMediaError({
+        title: accepted.length > 0 ? "Some files were not added" : "File type not supported",
+        message: rejected.join("\\n"),
+      });
+    }
+  };
+
+  const pickEvidence = async () => {
+    setMediaError(null);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsMultipleSelection: true,
+      });
+      if (result.canceled) return;
+
+      const files: SelectedMedia[] = result.assets.map((asset) => {
+        const pickerType = (asset as { mimeType?: string }).mimeType
+          || (asset.type === "video" ? "video/mp4" : "image/jpeg");
+        return {
+          uri: asset.uri,
+          name: getAssetName(asset.uri, asset.fileName, asset.type),
+          type: pickerType,
+          size: asset.fileSize || 0,
+        };
+      });
+      addPickedMedia(files);
+    } catch {
+      setMediaError({ title: "Could not open your media library", message: "Please check the app permission and try again." });
     }
   };
 
   const pickDocument = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ multiple: true });
-    if (!result.canceled) {
-      const newFiles = result.assets.map((a) => ({
-        uri: a.uri, name: a.name, type: a.mimeType || "application/octet-stream", size: a.size || 0,
+    setMediaError(null);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ multiple: true });
+      if (result.canceled) return;
+
+      const files: SelectedMedia[] = result.assets.map((asset) => ({
+        uri: asset.uri,
+        name: getAssetName(asset.uri, asset.name, asset.mimeType),
+        type: asset.mimeType || "",
+        size: asset.size || 0,
       }));
-      update("evidence", [...data.evidence, ...newFiles]);
+      addPickedMedia(files);
+    } catch {
+      setMediaError({ title: "Could not open your documents", message: "Please check the app permission and try again." });
     }
   };
 
   const removeEvidence = (index: number) => {
+    const removedUri = data.evidence[index]?.uri;
     setData((prev) => ({ ...prev, evidence: prev.evidence.filter((_, i) => i !== index) }));
+    if (removedUri) {
+      setUploadedEvidenceUris((current) => current.filter((uri) => uri !== removedUri));
+    }
   };
 
   const addWitness = () => {
@@ -358,6 +433,10 @@ export default function ReportWizard() {
         <View>
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Evidence</Text>
           <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Upload any evidence you have — photos, screenshots, documents, or recordings. You can also skip this and add evidence later.</Text>
+          <View style={[styles.mediaHint, { backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.md, marginBottom: spacing.sm }]}>
+            <Ionicons name="shield-checkmark-outline" size={18} color={scheme.primary} />
+            <Text style={[typography.body.small, { color: scheme.onSurfaceVariant, marginLeft: 8, flex: 1 }]}>Accepted: JPG, PNG, GIF, WEBP, PDF, MP4, MOV, MP3, WAV, OGG, DOC, DOCX, TXT. Maximum {Math.round(MAX_MEDIA_SIZE_BYTES / 1024 / 1024)} MB per file.</Text>
+          </View>
           <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.md }}>
             <Pressable onPress={pickEvidence} style={[styles.evidenceBtn, { flex: 1, borderColor: scheme.outline, borderRadius: borderRadius.md }]}>
               <Ionicons name="image-outline" size={24} color={scheme.primary} />
@@ -368,6 +447,30 @@ export default function ReportWizard() {
               <Text style={[typography.label.medium, { color: scheme.primary, marginTop: 4 }]}>Documents</Text>
             </Pressable>
           </View>
+          {mediaError && (
+            <View style={[styles.mediaErrorCard, { backgroundColor: scheme.errorContainer, borderColor: scheme.error, borderRadius: borderRadius.md, marginBottom: spacing.md }]} accessibilityRole="alert">
+              <Ionicons name="alert-circle" size={22} color={scheme.error} />
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={[typography.title.small, { color: scheme.onErrorContainer }]}>{mediaError.title}</Text>
+                <Text style={[typography.body.small, { color: scheme.onErrorContainer, marginTop: 3 }]}>{mediaError.message}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: spacing.sm }}>
+                  <Pressable onPress={handleSubmit} disabled={isSubmitting} style={({ pressed }) => [styles.retryUploadButton, { borderColor: scheme.error, opacity: isSubmitting ? 0.5 : pressed ? 0.7 : 1 }]}>
+                    <Ionicons name="refresh-outline" size={15} color={scheme.error} />
+                    <Text style={[typography.label.medium, { color: scheme.error, marginLeft: 5 }]}>Retry Upload</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setMediaError(null)} style={{ padding: 6, marginLeft: spacing.sm }}>
+                    <Text style={[typography.label.medium, { color: scheme.onErrorContainer }]}>Dismiss</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
+          {Object.keys(uploadProgress).length > 0 && (
+            <View style={[styles.mediaProgress, { backgroundColor: scheme.primaryContainer, borderRadius: borderRadius.md, marginBottom: spacing.md }]}>
+              <ActivityIndicator size="small" color={scheme.primary} />
+              <Text style={[typography.body.small, { color: scheme.onPrimaryContainer, marginLeft: spacing.sm }]}>Uploading evidence securely…</Text>
+            </View>
+          )}
           {data.evidence.length > 0 && (
             <View style={{ gap: 8 }}>
               {data.evidence.map((file, i) => (
@@ -523,6 +626,10 @@ const styles = StyleSheet.create({
   witnessRow: { flexDirection: "row", alignItems: "flex-start", padding: 8, borderWidth: 1, marginBottom: 8 },
   addBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, borderWidth: 1.5, borderStyle: "dashed" },
   evidenceBtn: { alignItems: "center", justifyContent: "center", paddingVertical: 24, borderWidth: 1.5, borderStyle: "dashed" },
+  mediaHint: { flexDirection: "row", alignItems: "flex-start", padding: 12 },
+  mediaErrorCard: { flexDirection: "row", alignItems: "flex-start", padding: 14, borderWidth: 1 },
+  retryUploadButton: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  mediaProgress: { flexDirection: "row", alignItems: "center", padding: 12 },
   fileRow: { flexDirection: "row", alignItems: "center", padding: 12 },
   checkRow: { flexDirection: "row", alignItems: "center" },
   footer: { paddingHorizontal: 16, paddingTop: 8, borderTopWidth: 1 },
