@@ -40,12 +40,14 @@ export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
           <Pressable
             key={tab.key}
             onPress={() => onTabPress(tab.key)}
-            style={styles.tab}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            style={({ pressed }) => [styles.tab, pressed && styles.tabPressed]}
           >
-            <View style={styles.iconWrap}>
+            <View style={[styles.iconPill, isActive && { backgroundColor: scheme.primaryContainer }]}>
               <Ionicons
                 name={isActive && tab.activeIcon ? tab.activeIcon : tab.icon}
-                size={24}
+                size={22}
                 color={color}
               />
               {tab.badge != null && tab.badge > 0 && (
@@ -59,7 +61,7 @@ export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
             <Text
               style={[
                 typography.label.small,
-                { color, fontSize: 11, marginTop: 2 },
+                { color, fontSize: 11, marginTop: 4 },
                 isActive && { fontWeight: "700" },
               ]}
               numberOfLines={1}
@@ -77,7 +79,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     borderTopWidth: 1,
-    paddingTop: 6,
+    paddingTop: 10,
   },
   tab: {
     flex: 1,
@@ -85,8 +87,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 4,
   },
-  iconWrap: {
-    position: "relative",
+  tabPressed: { opacity: 0.72 },
+  iconPill: {
+    minWidth: 48,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
   },
   badge: {
     position: "absolute",

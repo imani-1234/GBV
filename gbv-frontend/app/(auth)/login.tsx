@@ -10,6 +10,7 @@ import { AxiosError } from "axios";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button, TextField } from "../../src/components/ui";
+import { BrandLockup } from "../../src/components/branding/BrandLockup";
 import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/stores/authStore";
 import type { AuthTokens } from "../../src/types";
@@ -80,6 +81,14 @@ export default function LoginScreen() {
           <Ionicons name="arrow-back" size={24} color={scheme.onBackground} />
         </Pressable>
 
+        <View style={styles.authBrandRow}>
+          <BrandLockup variant="icon" width={48} height={48} />
+          <View style={{ marginLeft: spacing.sm }}>
+            <Text style={[typography.label.medium, styles.eyebrow, { color: scheme.secondary }]}>SAUTI YAKO</Text>
+            <Text style={[typography.label.small, { color: scheme.onSurfaceVariant }]}>Secure support at SUZA</Text>
+          </View>
+        </View>
+
         <Text style={[typography.headline.small, { color: scheme.onBackground, marginBottom: spacing.xs }]}>
           Welcome back
         </Text>
@@ -138,7 +147,9 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 24, paddingBottom: 40 },
-  back: { marginBottom: 16, alignSelf: "flex-start" },
+  back: { marginBottom: 18, alignSelf: "flex-start" },
+  authBrandRow: { flexDirection: "row", alignItems: "center", marginBottom: 28 },
+  eyebrow: { letterSpacing: 1.2, fontWeight: "800" },
   apiError: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 8, marginBottom: 16 },
   rememberRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 },
   rememberToggle: { flexDirection: "row", alignItems: "center" },

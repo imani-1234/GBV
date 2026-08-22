@@ -1,35 +1,35 @@
 {
   "expo": {
-    "name": "Imani — GBV Reporting",
-    "slug": "gbv-reporting-app",
+    "name": "Sauti Yako",
+    "slug": "sauti-yako",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/branding/sauti_yako_app_icon_light.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "gbv-reporting",
+    "scheme": "sauti-yako",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/branding/sauti_yako_vertical_light.png",
       "resizeMode": "contain",
-      "backgroundColor": "#6C63FF"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.gbv.imani",
+      "bundleIdentifier": "org.sauti.yako",
       "infoPlist": {
-        "NSCameraUsageDescription": "Imani uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case.",
-        "NSPhotoLibraryUsageDescription": "Imani accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
-        "NSPhotoLibraryAddUsageDescription": "Imani can save report attachments to your photo library for your personal records.",
-        "NSDocumentsFolderUsageDescription": "Imani accesses documents you choose to attach as supporting evidence to your report."
+        "NSCameraUsageDescription": "Sauti Yako uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case.",
+        "NSPhotoLibraryUsageDescription": "Sauti Yako accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
+        "NSPhotoLibraryAddUsageDescription": "Sauti Yako can save report attachments to your photo library for your personal records.",
+        "NSDocumentsFolderUsageDescription": "Sauti Yako accesses documents you choose to attach as supporting evidence to your report."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#6C63FF",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0B3B70",
+        "foregroundImage": "./assets/branding/sauti_yako_app_icon_light.png",
+        "backgroundImage": "./assets/branding/sauti_yako_app_icon_dark.png",
+        "monochromeImage": "./assets/branding/sauti_yako_symbol_one_color_dark.png"
       },
-      "package": "org.gbv.imani",
+      "package": "org.sauti.yako",
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "CAMERA",
@@ -42,7 +42,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/branding/sauti_yako_app_icon_light.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -56,8 +56,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Imani accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
-          "cameraPermission": "Imani uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case."
+          "photosPermission": "Sauti Yako accesses your photo library so you can attach images as evidence to support your report. Your images are kept confidential.",
+          "cameraPermission": "Sauti Yako uses your camera to attach photo evidence to reports. Photos are stored securely and only shared with authorized personnel handling your case."
         }
       ],
       [

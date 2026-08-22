@@ -1,4 +1,4 @@
-# Imani — GBV Incident Reporting System
+# Sauti Yako — GBV Support & Reporting System
 
 A secure, role-based mobile and web application for reporting and managing gender-based violence (GBV) incidents across university campuses. Built with Expo (React Native) and a Django REST backend.
 
@@ -49,9 +49,9 @@ Each role layout reads `authStore.user.role` and redirects to the correct group 
 
 Material Design 3 (M3) dynamic color system:
 
-- **Tonal palettes** defined in `src/theme/colors.ts` (primary violet/indigo, secondary teal, tertiary amber/coral)
+- **Tonal palettes** defined in `src/theme/colors.ts` (primary deep navy, secondary turquoise, tertiary academic gold)
 - **Light + dark schemes** auto-generated from palettes
-- **Role-accented nav chrome**: Reporter = primary (violet), Officer = secondary (teal), Admin = tertiary (amber)
+- **Role-accented nav chrome**: Reporter = primary navy, Officer = turquoise, Admin = academic gold
 - **Mode**: light / dark / system — persisted in AsyncStorage
 - All chart colors and component tokens pull from the `scheme` object, never hardcoded
 

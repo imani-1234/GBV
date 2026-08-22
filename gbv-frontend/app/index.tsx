@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Redirect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../src/theme/ThemeProvider";
+import { BrandLockup } from "../src/components/branding/BrandLockup";
 import { useAuthStore } from "../src/stores/authStore";
 import { authApi } from "../src/api/auth";
 import type { User } from "../src/types";
@@ -19,6 +21,7 @@ export default function AuthGate() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hydrate = useAuthStore((s) => s.hydrate);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const { scheme, typography } = useTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -74,32 +77,31 @@ export default function AuthGate() {
 
   if (gateState === "loading") {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: scheme.background }]}>
         <View style={styles.branding}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="shield-checkmark" size={40} color="#6C63FF" />
-          </View>
-          <Text style={styles.appName}>Imani</Text>
-          <Text style={styles.tagline}>Safe reporting. Real support.</Text>
+          <BrandLockup variant="vertical" width={160} height={240} />
+          <Text style={[typography.body.medium, styles.tagline, { color: scheme.onSurfaceVariant }]}>Preparing your secure space…</Text>
         </View>
-        <ActivityIndicator size="large" color="#6C63FF" style={{ marginTop: 48 }} />
+        <ActivityIndicator size="small" color={scheme.primary} style={{ marginTop: 28 }} />
       </View>
     );
   }
 
   if (gateState === "deactivated" || gateState === "session_expired") {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: scheme.background }]}>
         <View style={styles.errorContainer}>
-          <Ionicons
-            name={gateState === "deactivated" ? "shield-exclamation" : "time-outline"}
-            size={48}
-            color="#EF4444"
-          />
-          <Text style={styles.errorTitle}>
+          <View style={[styles.errorIcon, { backgroundColor: scheme.errorContainer }]}>
+            <Ionicons
+              name={gateState === "deactivated" ? "shield-outline" : "time-outline"}
+              size={28}
+              color={scheme.error}
+            />
+          </View>
+          <Text style={[typography.title.large, styles.errorTitle, { color: scheme.onBackground }]}>
             {gateState === "deactivated" ? "Account Deactivated" : "Session Expired"}
           </Text>
-          <Text style={styles.errorMessage}>{gateMessage}</Text>
+          <Text style={[typography.body.medium, styles.errorMessage, { color: scheme.onSurfaceVariant }]}>{gateMessage}</Text>
         </View>
         <Redirect href="/(auth)" />
       </View>
@@ -122,12 +124,11 @@ export default function AuthGate() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFFFFF" },
+  container: { flex: 1, justifyContent: "center", alignItems: "center" },
   branding: { alignItems: "center" },
-  iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: "#EDECFF", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  appName: { fontSize: 28, fontWeight: "700", color: "#1C1B1F", marginBottom: 4 },
-  tagline: { fontSize: 16, color: "#79767A" },
+  tagline: { marginTop: 4 },
   errorContainer: { alignItems: "center", paddingHorizontal: 32 },
-  errorTitle: { fontSize: 20, fontWeight: "700", color: "#1C1B1F", marginTop: 16, marginBottom: 8 },
-  errorMessage: { fontSize: 14, color: "#79767A", textAlign: "center", lineHeight: 20 },
+  errorIcon: { width: 64, height: 64, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  errorTitle: { marginTop: 18, marginBottom: 8, textAlign: "center" },
+  errorMessage: { textAlign: "center", lineHeight: 21 },
 });

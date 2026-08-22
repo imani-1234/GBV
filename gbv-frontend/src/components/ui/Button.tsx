@@ -48,9 +48,9 @@ export function Button({
     : {};
 
   const sizeStyle = {
-    sm: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-    md: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
-    lg: { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl },
+    sm: { paddingVertical: spacing.sm + 1, paddingHorizontal: spacing.lg },
+    md: { paddingVertical: spacing.md, paddingHorizontal: spacing.xl },
+    lg: { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl + spacing.sm },
   }[size];
 
   const elevationStyle = variant === "elevated" ? getElevation(2) : {};
@@ -83,7 +83,8 @@ export function Button({
         style={[
           {
             backgroundColor: bgColor,
-            borderRadius: borderRadius.lg,
+            borderRadius: borderRadius.xl,
+            minHeight: size === "lg" ? 54 : size === "md" ? 48 : 42,
             opacity: disabled ? 0.5 : 1,
             alignItems: "center",
             justifyContent: "center",
@@ -100,7 +101,7 @@ export function Button({
         ) : (
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             {icon && <View style={{ marginRight: spacing.sm }}>{icon}</View>}
-            <Text style={{ color: textColor, ...typography.label.large }}>{title}</Text>
+            <Text style={{ color: textColor, ...typography.label.large, fontWeight: "700", letterSpacing: 0.15 }}>{title}</Text>
           </View>
         )}
       </Pressable>

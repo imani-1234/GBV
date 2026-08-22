@@ -26,25 +26,25 @@ export interface TonalPalettes {
   neutralVariant: TonalPalette;
 }
 
-// Violet/Indigo — Primary brand
+// Deep navy — Sauti Yako primary brand
 const primaryPalette: TonalPalette = {
-  0: "#000000", 10: "#1A0066", 20: "#2D0099", 30: "#4300CC",
-  40: "#6C63FF", 50: "#8B85FF", 60: "#A5A0FF", 70: "#C0BCFF",
-  80: "#DCDAFF", 90: "#EDECFF", 95: "#F5F4FF", 99: "#FCFBFF", 100: "#FFFFFF",
+  0: "#020B18", 10: "#00254A", 20: "#06345F", 30: "#06477A",
+  40: "#0B3B70", 50: "#275A8D", 60: "#4A7AA6", 70: "#7899BD",
+  80: "#A7C0D6", 90: "#D8E6F2", 95: "#EDF4F9", 99: "#FAFCFE", 100: "#FFFFFF",
 };
 
-// Teal — Secondary for less prominent accents
+// Turquoise — Secondary voice and ocean accent
 const secondaryPalette: TonalPalette = {
-  0: "#000000", 10: "#00201B", 20: "#003830", 30: "#005046",
-  40: "#006B5E", 50: "#008576", 60: "#00A08E", 70: "#00BFA6",
-  80: "#5CD4C0", 90: "#A0F0E0", 95: "#C5F8EC", 99: "#E6FFF5", 100: "#FFFFFF",
+  0: "#001A1D", 10: "#00373A", 20: "#00545A", 30: "#00727A",
+  40: "#0F9FAF", 50: "#18B7C5", 60: "#4AC9D2", 70: "#72D9DF",
+  80: "#9BE7EB", 90: "#C7F3F5", 95: "#E2F9FA", 99: "#F5FDFD", 100: "#FFFFFF",
 };
 
-// Amber/Coral — Tertiary for CTAs and highlight
+// Academic gold — Tertiary hope and highlight accent
 const tertiaryPalette: TonalPalette = {
-  0: "#000000", 10: "#2E1500", 20: "#4A2500", 30: "#683500",
-  40: "#894600", 50: "#A85900", 60: "#C96D00", 70: "#E88200",
-  80: "#FFB443", 90: "#FFDDB3", 95: "#FFEED5", 99: "#FFF8F0", 100: "#FFFFFF",
+  0: "#1A1000", 10: "#3D2700", 20: "#5D3B00", 30: "#7D5000",
+  40: "#A96C00", 50: "#C88700", 60: "#DFA52A", 70: "#EDBF58",
+  80: "#F5D68D", 90: "#FBE9BE", 95: "#FEF3D9", 99: "#FFF9EC", 100: "#FFFFFF",
 };
 
 // Red — Error

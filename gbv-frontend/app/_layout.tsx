@@ -5,7 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "../src/theme/ThemeProvider";
+import { ThemeProvider, useTheme } from "../src/theme/ThemeProvider";
 import { ErrorBoundary } from "../src/components/ErrorBoundary";
 
 // ── Sentry (optional — set EXPO_PUBLIC_SENTRY_DSN in your .env) ────
@@ -18,6 +18,11 @@ if (SENTRY_DSN) {
 }
 
 SplashScreen.preventAutoHideAsync();
+
+function ThemeStatusBar() {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +55,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(admin)" />
                 <Stack.Screen name="_dev/theme-gallery" />
               </Stack>
-              <StatusBar style="auto" />
+              <ThemeStatusBar />
             </ThemeProvider>
           </SafeAreaProvider>
         </QueryClientProvider>

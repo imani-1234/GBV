@@ -6,6 +6,7 @@ import Animated, { FadeInDown, FadeInUp, FadeIn } from "react-native-reanimated"
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button } from "../../src/components/ui";
+import { BrandLockup } from "../../src/components/branding/BrandLockup";
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -27,13 +28,12 @@ export default function LandingScreen() {
 
           {showContent && (
             <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.heroContent}>
-              {/* Icon circle */}
-              <View style={[styles.iconCircle, { backgroundColor: scheme.primaryContainer }]}>
-                <Ionicons name="shield-checkmark" size={40} color={scheme.primary} />
-              </View>
+              <Text style={[typography.label.medium, styles.eyebrow, { color: scheme.secondary }]}>SAUTI YAKO • SUZA ZANZIBAR</Text>
+              <BrandLockup variant="vertical" width={170} height={255} style={styles.heroLogo} />
 
               <Text style={[typography.display.small, styles.heroTitle, { color: scheme.onBackground }]}>
-                Your voice{'\n'}matters.
+
+                Your voice{"\n"}matters here.
               </Text>
               <Text style={[typography.body.large, styles.heroSubtitle, { color: scheme.onSurfaceVariant }]}>
                 A safe, confidential space to share your experience and get the support you deserve. 
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingBottom: 24 },
   heroContainer: {
     flex: 1,
-    minHeight: 420,
+    minHeight: 500,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -120,14 +120,8 @@ const styles = StyleSheet.create({
     borderRadius: 150,
   },
   heroContent: { alignItems: "center" },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
+  eyebrow: { letterSpacing: 1.4, marginBottom: 10 },
+  heroLogo: { marginBottom: 4 },
   heroTitle: {
     textAlign: "center",
     marginBottom: 16,

@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../theme/ThemeProvider";
+import { BrandLockup } from "../branding/BrandLockup";
 import type { TabDefinition } from "./TabBar";
 
 interface SideRailProps {
@@ -29,12 +30,11 @@ export function SideRail({ tabs, activeTab, onTabPress }: SideRailProps) {
       ]}
     >
       <View style={[styles.brand, { paddingHorizontal: spacing.md, marginBottom: spacing.lg }]}>
-        <View style={[styles.brandIcon, { backgroundColor: scheme.primaryContainer }]}>
-          <Ionicons name="shield-checkmark" size={20} color={scheme.primary} />
+        <BrandLockup variant="icon" width={40} height={40} />
+        <View style={{ marginLeft: spacing.sm }}>
+          <Text style={[typography.title.small, styles.brandName, { color: scheme.onSurface }]}>Sauti Yako</Text>
+          <Text style={[typography.label.small, { color: scheme.onSurfaceVariant, marginTop: 1 }]}>SUZA • ZANZIBAR</Text>
         </View>
-        <Text style={[typography.title.small, { color: scheme.onSurface, marginLeft: spacing.sm }]}>
-          Imani
-        </Text>
       </View>
       <ScrollView showsVerticalScrollIndicator={false}>
         {tabs.map((tab) => {
@@ -89,7 +89,7 @@ export function SideRail({ tabs, activeTab, onTabPress }: SideRailProps) {
 const styles = StyleSheet.create({
   container: { borderRightWidth: 1 },
   brand: { flexDirection: "row", alignItems: "center" },
-  brandIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  brandName: { fontWeight: "800", letterSpacing: 0.2 },
   navItem: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
   badge: { minWidth: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
 });

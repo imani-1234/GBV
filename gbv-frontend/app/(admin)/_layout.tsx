@@ -5,6 +5,7 @@ import { Stack } from "expo-router/stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
+import { BrandLockup } from "../../src/components/branding/BrandLockup";
 import { useBreakpoint, isWide } from "../../src/hooks/useBreakpoint";
 
 interface NavItem {
@@ -64,10 +65,11 @@ export default function AdminLayout() {
       ]}
     >
       <View style={[styles.brand, { paddingHorizontal: spacing.md, marginBottom: spacing.lg }]}>
-        <View style={[styles.brandIcon, { backgroundColor: scheme.tertiaryContainer }]}>
-          <Ionicons name="shield-checkmark" size={20} color={scheme.tertiary} />
+        <BrandLockup variant="icon" width={40} height={40} />
+        <View style={{ marginLeft: spacing.sm }}>
+          <Text style={[typography.title.small, styles.brandName, { color: scheme.onSurface }]}>Sauti Yako</Text>
+          <Text style={[typography.label.small, { color: scheme.onSurfaceVariant, marginTop: 1 }]}>ADMIN CONSOLE</Text>
         </View>
-        <Text style={[typography.title.small, { color: scheme.onSurface, marginLeft: spacing.sm }]}>Imani Admin</Text>
       </View>
 
       {!wide && (
@@ -146,7 +148,10 @@ export default function AdminLayout() {
             <Pressable onPress={() => setDrawerOpen(true)} style={{ padding: spacing.sm }}>
               <Ionicons name="menu" size={24} color={scheme.onSurface} />
             </Pressable>
-            <Text style={[typography.title.small, { color: scheme.onSurface }]}>Admin</Text>
+            <View>
+              <Text style={[typography.title.small, styles.mobileTitle, { color: scheme.onSurface }]}>Sauti Yako</Text>
+              <Text style={[typography.label.small, { color: scheme.onSurfaceVariant }]}>Admin console</Text>
+            </View>
             <View style={{ width: 40 }} />
           </View>
         )}
@@ -170,7 +175,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: "row" },
   sidebar: { borderRightWidth: 1 },
   brand: { flexDirection: "row", alignItems: "center" },
-  brandIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  brandName: { fontWeight: "800", letterSpacing: 0.2 },
+  mobileTitle: { fontWeight: "800" },
   closeBtn: { alignSelf: "flex-end" },
   navItem: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
   overlay: { position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 10 },

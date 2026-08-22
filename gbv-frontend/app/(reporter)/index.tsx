@@ -8,6 +8,7 @@ import { useTheme } from "../../src/theme/ThemeProvider";
 import { Button, Card, Chip, Divider, Skeleton } from "../../src/components/ui";
 import { reportsApi } from "../../src/api/reports";
 import { casesApi } from "../../src/api/cases";
+import { BrandLockup } from "../../src/components/branding/BrandLockup";
 import { useAuthStore } from "../../src/stores/authStore";
 import type { Case, CaseStatus } from "../../src/types";
 
@@ -30,7 +31,7 @@ function getStatusLabel(status: string): string {
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon4";
+  if (h < 18) return "Good afternoon";
   return "Good evening";
 }
 
@@ -77,7 +78,7 @@ function LoadingSkeleton() {
 
 export default function ReporterHome() {
   const router = useRouter();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
+  const { scheme, spacing, borderRadius, typography, getElevation } = useTheme();
   const isAnonymous = useAuthStore((s) => s.isAnonymous);
 
   const { data: reportsData, isLoading: reportsLoading, refetch: refetchReports } = useQuery({
@@ -117,18 +118,24 @@ export default function ReporterHome() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={scheme.primary} />}
       >
-        {/* Greeting */}
-        <Text style={[typography.display.small, { color: scheme.onBackground, fontSize: 28, lineHeight: 36 }]}>
-          {getGreeting()}
-        </Text>
-        <Text style={[typography.body.large, { color: scheme.onSurfaceVariant, marginTop: 4, marginBottom: spacing.lg }]}>
-          {formatDate()}
-        </Text>
+        {/* Branded greeting */}
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.label.medium, styles.eyebrow, { color: scheme.secondary }]}>SAUTI YAKO • SUZA ZANZIBAR</Text>
+            <Text style={[typography.display.small, { color: scheme.onBackground, fontSize: 28, lineHeight: 36, marginTop: 6 }]}>
+              {getGreeting()}
+            </Text>
+            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: 4 }]}>
+              {formatDate()}
+            </Text>
+          </View>
+          <BrandLockup variant="minimal" width={64} height={64} />
+        </View>
 
         {/* Submit CTA */}
         <Pressable
           onPress={() => router.push("/(reporter)/reports/new")}
-          style={[styles.ctaCard, { backgroundColor: scheme.primaryContainer, borderRadius: borderRadius.xl }]}
+          style={[styles.ctaCard, { backgroundColor: scheme.primaryContainer, borderRadius: borderRadius.xl }, getElevation(1)]}
         >
           <View style={{ flex: 1 }}>
             <Text style={[typography.title.medium, { color: scheme.onPrimaryContainer }]}>
@@ -235,6 +242,8 @@ export default function ReporterHome() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 24, paddingBottom: 40 },
+  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 22 },
+  eyebrow: { letterSpacing: 1.1 },
   ctaCard: { flexDirection: "row", alignItems: "center", padding: 20 },
   ctaIcon: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginLeft: 16 },
   statsRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
