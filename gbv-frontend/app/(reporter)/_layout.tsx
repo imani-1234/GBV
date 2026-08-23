@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Stack } from "expo-router/stack";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { TabBar } from "../../src/components/navigation/TabBar";
 import type { TabDefinition } from "../../src/components/navigation/TabBar";
@@ -43,7 +43,8 @@ export default function ReporterLayout() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
+    <View style={[styles.container, { backgroundColor: scheme.background }]}>
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
       <Stack screenOptions={{ headerShown: false }} style={styles.content}>
         <Stack.Screen name="index" />
         <Stack.Screen name="reports/index" />
@@ -55,7 +56,7 @@ export default function ReporterLayout() {
         <Stack.Screen name="settings" />
       </Stack>
       <TabBar tabs={visibleTabs} activeTab={activeTab} onTabPress={handleTabPress} tone="auth" />
-    </SafeAreaView>
+    </View>
   );
 }
 

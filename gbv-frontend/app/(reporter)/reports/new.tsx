@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../../src/theme/ThemeProvider";
@@ -25,6 +25,7 @@ import {
   type MediaErrorMessage,
   type SelectedMedia,
 } from "../../../src/utils/mediaValidation";
+import { reporterWizardTitle } from "../../../src/utils/reporterScreenCopy";
 
 function toDateInput(date: Date): string {
   const y = date.getFullYear();
@@ -589,8 +590,8 @@ export default function ReportWizard() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <StatusBar style="dark" />
+    <View style={styles.container}>
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
       <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.closeButton} hitSlop={12}>
@@ -602,7 +603,7 @@ export default function ReportWizard() {
       </View>
 
       <View style={styles.titleBlock}>
-        <Text style={styles.wizardTitle}>Create{`\n`}report</Text>
+        <Text style={styles.wizardTitle}>{reporterWizardTitle}</Text>
         <View style={styles.progressMeta}>
           <Text style={styles.progressLabel}>{STEPS[step].label}</Text>
           <Text style={styles.progressCount}>{step + 1} / {STEPS.length}</Text>
@@ -633,7 +634,7 @@ export default function ReportWizard() {
           </View>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -641,7 +642,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
   lilacArc: { position: "absolute", width: 620, height: 430, top: -250, left: -205, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
   lilacArcInner: { position: "absolute", width: 540, height: 370, left: 90, top: 105, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 32, paddingTop: 8, minHeight: 52 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 32, paddingTop: 42, minHeight: 86 },
   closeButton: { padding: 4 },
   saveButton: { paddingVertical: 8, paddingHorizontal: 10 },
   saveText: { color: "#7E36B7", fontSize: 13.5, fontWeight: "800" },

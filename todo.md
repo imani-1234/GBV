@@ -41,3 +41,9 @@
 - [x] Add regression coverage for anonymous dashboard data selection and protected backend boundaries.
 - [x] Redesign the reporter dashboard, report list, report detail, messages, notifications, and settings in the reference-matched mobile UI system.
 - [x] Validate anonymous and identified reporter workflows, then commit and push the complete reporter update.
+
+## Reporter Status-Bar Coverage and Rendering Fix
+
+- [x] Remove malformed literal line-break markers from refreshed reporter headings.
+- [x] Make the refreshed reporter screens cover a transparent status bar without visible SafeAreaView bands.
+- [x] Validate the corrected reporter route set, then commit and push the mobile shell refinement.

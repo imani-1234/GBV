@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -9,6 +8,7 @@ import { reportsApi } from "../../src/api/reports";
 import { casesApi } from "../../src/api/cases";
 import { useAuthStore } from "../../src/stores/authStore";
 import { mayFetchReporterCases } from "../../src/utils/reporterAccess";
+import { reporterHeroTitle } from "../../src/utils/reporterScreenCopy";
 import type { Report } from "../../src/types";
 
 function labelForStatus(status: string) {
@@ -47,8 +47,8 @@ export default function ReporterHome() {
   }, [loadCases, refetchCases, refetchReports]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar style="dark" />
+    <View style={styles.safeArea}>
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
       <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -58,7 +58,7 @@ export default function ReporterHome() {
         <View style={styles.introRow}>
           <View style={styles.introText}>
             <Text style={styles.eyebrow}>{isAnonymous ? "PRIVATE REPORTING SPACE" : "SAUTI YAKO"}</Text>
-            <Text style={styles.title}>{isAnonymous ? "Your reports,{`\n`}your privacy." : "Your voice{`\n`}matters."}</Text>
+            <Text style={styles.title}>{reporterHeroTitle(isAnonymous)}</Text>
           </View>
           <View style={styles.profileMark}><Ionicons name={isAnonymous ? "eye-off-outline" : "person-outline"} size={21} color="#7E36B7" /></View>
         </View>
@@ -89,7 +89,7 @@ export default function ReporterHome() {
 
         <Pressable onPress={() => router.push("/(auth)/resources")} style={styles.helpCard}><Ionicons name="heart-outline" size={21} color="#8B475F" /><View style={styles.helpCopy}><Text style={styles.helpTitle}>Need immediate help?</Text><Text style={styles.helpText}>Private support is available at any time.</Text></View><Ionicons name="chevron-forward" size={19} color="#8B475F" /></Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
   lilacArc: { position: "absolute", width: 620, height: 500, top: -280, left: -190, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
   lilacArcInner: { position: "absolute", width: 540, height: 400, left: 85, top: 108, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
-  scroll: { paddingHorizontal: 27, paddingTop: 26, paddingBottom: 30 },
+  scroll: { paddingHorizontal: 27, paddingTop: 58, paddingBottom: 30 },
   introRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 30 },
   introText: { flex: 1 },
   eyebrow: { color: "#7E36B7", fontSize: 11.5, letterSpacing: 1.9, fontWeight: "800", marginBottom: 12 },

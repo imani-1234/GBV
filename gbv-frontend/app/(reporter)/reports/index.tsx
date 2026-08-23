@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,8 +21,8 @@ export default function MyReportsScreen() {
   const reports = data?.results || [];
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <StatusBar style="dark" />
+    <View style={styles.safeArea}>
+      <StatusBar style="dark" translucent backgroundColor="transparent" />
       <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <View style={styles.header}>
         <View><Text style={styles.eyebrow}>PRIVATE RECORD</Text><Text style={styles.title}>Your reports</Text></View>
@@ -38,7 +37,7 @@ export default function MyReportsScreen() {
         renderItem={({ item }: { item: Report }) => <Pressable onPress={() => router.push(`/reports/${item.id}`)} style={({ pressed }) => [styles.reportCard, pressed && styles.pressed]}><View style={styles.reportIcon}><Ionicons name="document-text-outline" size={20} color="#813BBC" /></View><View style={styles.reportCopy}><Text style={styles.reportTitle} numberOfLines={1}>{item.category?.name || "Incident report"}</Text><Text style={styles.reportDate}>{new Date(item.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</Text></View><View style={styles.statusPill}><Text style={styles.status}>{display(item.status)}</Text></View><Ionicons name="chevron-forward" size={18} color="#9A909E" /></Pressable>}
         ListEmptyComponent={!isLoading ? <View style={styles.empty}><Ionicons name="document-text-outline" size={32} color="#813BBC" /><Text style={styles.emptyTitle}>No reports here</Text><Text style={styles.emptyText}>Create a private report when you are ready.</Text><Pressable onPress={() => router.push("/(reporter)/reports/new")} style={styles.emptyAction}><Text style={styles.emptyActionText}>Create report</Text></Pressable></View> : null}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -46,7 +45,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
   lilacArc: { position: "absolute", width: 620, height: 420, top: -290, left: -30, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
   lilacArcInner: { position: "absolute", width: 540, height: 350, top: 112, left: -83, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingTop: 22, paddingBottom: 21 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 28, paddingTop: 58, paddingBottom: 21 },
   eyebrow: { color: "#7E36B7", fontSize: 11, letterSpacing: 1.8, fontWeight: "800", marginBottom: 7 },
   title: { color: "#09080A", fontSize: 32, lineHeight: 36, fontWeight: "700", letterSpacing: -1.2 },
   addButton: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#A95BEA", alignItems: "center", justifyContent: "center", shadowColor: "#A75CDF", shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
