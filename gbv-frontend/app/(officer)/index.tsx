@@ -1,511 +1,98 @@
 import { useCallback, useMemo } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../src/theme/ThemeProvider";
-import { Card, Skeleton, Chip, Divider } from "../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 import { casesApi } from "../../src/api/cases";
 import type { Case } from "../../src/types";
 
-const PRIORITY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  critical: { bg: "#FEE2E2", text: "#991B1B", dot: "#DC2626" },
-  high: { bg: "#FEF3C7", text: "#92400E", dot: "#F59E0B" },
-  medium: { bg: "#DBEAFE", text: "#1E40AF", dot: "#3B82F6" },
-  low: { bg: "#D1FAE5", text: "#065F46", dot: "#10B981" },
+const priorityStyle: Record<string, { color: string; soft: string; label: string }> = {
+  critical: { color: "#A43E5C", soft: "#FFF0F4", label: "Critical" },
+  high: { color: "#A76A11", soft: "#FFF7E7", label: "High" },
+  medium: { color: "#7C3CB0", soft: "#F4E8FF", label: "Medium" },
+  low: { color: "#2C755A", soft: "#ECF8F0", label: "Low" },
 };
 
-function getStatusLabel(s: string): string {
-  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function statusLabel(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function StatCard({
-  label,
-  value,
-  color,
-  icon,
-  onPress,
-}: {
-  label: string;
-  value: string | number;
-  color: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  onPress?: () => void;
-}) {
-  const { scheme, spacing, borderRadius: br } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.statCard,
-        {
-          backgroundColor: scheme.surface,
-          borderRadius: br.xl,
-          borderLeftWidth: 4,
-          borderLeftColor: color,
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={`${label}: ${value}`}
-    >
-      <View style={[styles.statIcon, { backgroundColor: `${color}18` }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={{ marginTop: spacing.sm }}>
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "700",
-            color: scheme.onSurface,
-          }}
-        >
-          {value}
-        </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: scheme.onSurfaceVariant,
-            marginTop: 2,
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-    </Pressable>
-  );
+function OfficerMetric({ icon, value, label, tone = "purple", onPress }: { icon: keyof typeof Ionicons.glyphMap; value: number; label: string; tone?: "purple" | "rose" | "amber" | "blue"; onPress?: () => void }) {
+  const colors = {
+    purple: ["#813BBC", "#F1E2FD"],
+    rose: ["#B14C68", "#FFF0F4"],
+    amber: ["#AD7010", "#FFF7E8"],
+    blue: ["#3979D5", "#EDF3FF"],
+  } as const;
+  const [color, soft] = colors[tone];
+  return <Pressable onPress={onPress} style={({ pressed }) => [styles.metric, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel={`${label}: ${value}`}><View style={[styles.metricIcon, { backgroundColor: soft }]}><Ionicons name={icon} size={19} color={color} /></View><Text style={styles.metricValue}>{value}</Text><Text style={styles.metricLabel}>{label}</Text></Pressable>;
 }
 
-function PriorityChartCard({
-  byPriority,
-}: {
-  byPriority: Record<string, number>;
-}) {
-  const { scheme, spacing, borderRadius: br } = useTheme();
-  const order = ["critical", "high", "medium", "low"];
-  const total = Object.values(byPriority).reduce((a, b) => a + b, 0) || 1;
-
-  return (
-    <Card variant="filled" padding="md" style={{ marginBottom: spacing.md }}>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "600",
-          color: scheme.onSurface,
-          marginBottom: spacing.sm,
-          marginLeft: 4,
-        }}
-      >
-        Cases by Priority
-      </Text>
-      {order.map((key) => {
-        const count = byPriority[key] || 0;
-        const pct = Math.round((count / total) * 100);
-        const colors = PRIORITY_COLORS[key];
-        return (
-          <View key={key} style={{ marginBottom: spacing.xs }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 4,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: colors.dot,
-                  }}
-                />
-                <Text
-                  style={{
-                    fontSize: 13,
-                    color: scheme.onSurface,
-                    textTransform: "capitalize",
-                  }}
-                >
-                  {key}
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "600",
-                  color: scheme.onSurfaceVariant,
-                }}
-              >
-                {count}
-              </Text>
-            </View>
-            <View
-              style={{
-                height: 6,
-                backgroundColor: scheme.surfaceVariant,
-                borderRadius: 3,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  width: `${pct}%`,
-                  height: "100%",
-                  backgroundColor: colors.dot,
-                  borderRadius: 3,
-                }}
-              />
-            </View>
-          </View>
-        );
-      })}
-    </Card>
-  );
+function PriorityOverview({ byPriority }: { byPriority: Record<string, number> }) {
+  return <View style={styles.priorityCard}><Text style={styles.cardEyebrow}>CASE PRIORITY</Text><Text style={styles.cardTitle}>Where care is needed</Text>{["critical", "high", "medium", "low"].map((priority) => { const item = priorityStyle[priority]; const count = byPriority[priority] ?? 0; return <View style={styles.priorityRow} key={priority}><View style={[styles.priorityDot, { backgroundColor: item.color }]} /><Text style={styles.priorityLabel}>{item.label}</Text><View style={[styles.priorityCount, { backgroundColor: item.soft }]}><Text style={[styles.priorityCountText, { color: item.color }]}>{count}</Text></View></View>; })}</View>;
 }
 
-function NeedsAttentionCard({
-  cases,
-  onPress,
-}: {
-  cases: Case[];
-  onPress: (c: Case) => void;
-}) {
-  const { scheme, spacing, borderRadius: br, typography } = useTheme();
-
-  if (cases.length === 0) return null;
-
-  return (
-    <Card variant="outlined" padding="none" style={{ marginBottom: spacing.md, overflow: "hidden" }}>
-      <View
-        style={{
-          backgroundColor: "#FEF2F2",
-          paddingHorizontal: spacing.md,
-          paddingVertical: spacing.sm,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: spacing.sm,
-        }}
-      >
-        <Ionicons name="alert-circle" size={18} color="#DC2626" />
-        <Text style={{ fontSize: 15, fontWeight: "600", color: "#991B1B" }}>
-          Needs Attention ({cases.length})
-        </Text>
-      </View>
-      {cases.slice(0, 5).map((c, i) => {
-        const isLast = i === Math.min(cases.length - 1, 4);
-        const priorityColors = PRIORITY_COLORS[c.priority] || PRIORITY_COLORS.medium;
-        return (
-          <Pressable
-            key={c.id}
-            onPress={() => onPress(c)}
-            style={({ pressed }) => [
-              styles.attentionItem,
-              {
-                backgroundColor: pressed ? scheme.surfaceVariant : "transparent",
-                borderBottomWidth: isLast ? 0 : 1,
-                borderBottomColor: scheme.outlineVariant,
-              },
-            ]}
-          >
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: priorityColors.dot,
-                marginTop: 4,
-              }}
-            />
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text
-                style={[typography.body.medium, { color: scheme.onSurface, fontWeight: "600" }]}
-                numberOfLines={1}
-              >
-                {c.report?.case_number ? `#${c.report.case_number}` : "Unassigned"}
-              </Text>
-              <Text
-                style={[typography.body.small, { color: scheme.onSurfaceVariant }]}
-                numberOfLines={1}
-              >
-                {c.report?.category?.name || "Incident Report"} · {getStatusLabel(c.status)}
-              </Text>
-            </View>
-            <View
-              style={{
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                borderRadius: 4,
-                backgroundColor: priorityColors.bg,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: priorityColors.text,
-                  textTransform: "capitalize",
-                }}
-              >
-                {c.priority}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      })}
-      {cases.length > 5 && (
-        <Pressable
-          onPress={() => {}}
-          style={({ pressed }) => ({
-            padding: spacing.sm,
-            alignItems: "center",
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Text style={{ fontSize: 13, color: scheme.primary, fontWeight: "600" }}>
-            +{cases.length - 5} more
-          </Text>
-        </Pressable>
-      )}
-    </Card>
-  );
-}
-
-function DashboardSkeleton() {
-  const { scheme, spacing } = useTheme();
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: scheme.background }}
-      contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
-    >
-      <Skeleton width="50%" height={28} />
-      <Skeleton width="70%" height={16} style={{ marginTop: 8 }} />
-
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
-        <View style={{ flex: 1 }}>
-          <Skeleton width="100%" height={100} borderRadius={16} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Skeleton width="100%" height={100} borderRadius={16} />
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1 }}>
-          <Skeleton width="100%" height={100} borderRadius={16} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Skeleton width="100%" height={100} borderRadius={16} />
-        </View>
-      </View>
-
-      <Skeleton width="100%" height={180} borderRadius={16} style={{ marginTop: 24 }} />
-      <Skeleton width="100%" height={200} borderRadius={16} style={{ marginTop: 16 }} />
-    </ScrollView>
-  );
+function AttentionList({ cases, onPress }: { cases: Case[]; onPress: (caseItem: Case) => void }) {
+  if (!cases.length) return null;
+  return <View style={styles.attentionCard}><View style={styles.cardHeader}><View><Text style={styles.cardEyebrow}>FOLLOW-UP</Text><Text style={styles.cardTitle}>Needs your attention</Text></View><View style={styles.attentionBadge}><Text style={styles.attentionBadgeText}>{cases.length}</Text></View></View>{cases.slice(0, 3).map((caseItem) => { const priority = priorityStyle[caseItem.priority] ?? priorityStyle.medium; return <Pressable key={caseItem.id} onPress={() => onPress(caseItem)} style={({ pressed }) => [styles.caseRow, pressed && styles.pressed]}><View style={[styles.caseSignal, { backgroundColor: priority.color }]} /><View style={styles.caseCopy}><Text style={styles.caseNumber} numberOfLines={1}>{caseItem.report?.case_number ? `#${caseItem.report.case_number}` : "Private case"}</Text><Text style={styles.caseMeta} numberOfLines={1}>{caseItem.report?.category?.name || "Incident report"} · {statusLabel(caseItem.status)}</Text></View><View style={[styles.casePriority, { backgroundColor: priority.soft }]}><Text style={[styles.casePriorityText, { color: priority.color }]}>{priority.label}</Text></View><Ionicons name="chevron-forward" size={17} color="#998FA0" /></Pressable>; })}</View>;
 }
 
 export default function OfficerDashboard() {
   const router = useRouter();
-  const { scheme, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
+  const { data: stats, isLoading, isRefetching, refetch } = useQuery({ queryKey: ["officer-stats"], queryFn: () => casesApi.officerStats() });
+  const statusCounts = useMemo(() => Object.entries(stats?.by_status ?? {}).sort(([, first], [, second]) => second - first).slice(0, 3), [stats?.by_status]);
+  const openCase = useCallback((caseItem: Case) => router.push(`/(officer)/cases/${caseItem.id}`), [router]);
 
-  const { data: stats, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["officer-stats"],
-    queryFn: () => casesApi.officerStats(),
-  });
-
-  const handleCasePress = useCallback(
-    (c: Case) => {
-      router.push(`/(officer)/cases/${c.id}`);
-    },
-    [router],
-  );
-
-  const statusCounts = useMemo(() => {
-    if (!stats?.by_status) return [];
-    return Object.entries(stats.by_status)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 6);
-  }, [stats?.by_status]);
-
-  if (isLoading) return <DashboardSkeleton />;
-
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: scheme.background }}
-      contentContainerStyle={{
-        padding: spacing.lg,
-        paddingBottom: insets.bottom + 100,
-      }}
-      showsVerticalScrollIndicator={false}
-      refreshing={isRefetching}
-      onRefresh={refetch}
-    >
-      <View style={{ marginBottom: spacing.sm }}>
-        <Text
-          style={[
-            typography.headline.small,
-            { color: scheme.onBackground, marginBottom: 4 },
-          ]}
-        >
-          Case Dashboard
-        </Text>
-        <Text
-          style={[
-            typography.body.medium,
-            { color: scheme.onSurfaceVariant },
-          ]}
-        >
-          Overview of your assigned cases
-        </Text>
-      </View>
-
-      <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}>
-        <View style={{ flex: 1 }}>
-          <StatCard
-            label="Total Cases"
-            value={stats?.total_assigned ?? 0}
-            color={scheme.primary}
-            icon="folder"
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <StatCard
-            label="Critical"
-            value={(stats?.by_priority?.critical ?? 0) + (stats?.by_priority?.high ?? 0)}
-            color={PRIORITY_COLORS.critical.dot}
-            icon="flame"
-            onPress={() => router.push("/(officer)/cases/index?priority=critical")}
-          />
-        </View>
-      </View>
-      <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm }}>
-        <View style={{ flex: 1 }}>
-          <StatCard
-            label="Needs Response"
-            value={stats?.by_status?.AWAITING_REPORTER_RESPONSE ?? 0}
-            color={PRIORITY_COLORS.high.dot}
-            icon="chatbubble-ellipses"
-          />
-        </View>
-        <View style={{ flex: 1 }}>
-          <StatCard
-            label="Under Review"
-            value={stats?.by_status?.UNDER_REVIEW ?? 0}
-            color={scheme.info}
-            icon="search"
-          />
-        </View>
-      </View>
-
-      <PriorityChartCard byPriority={stats?.by_priority ?? {}} />
-
-      {stats?.needs_attention && stats.needs_attention.length > 0 && (
-        <NeedsAttentionCard cases={stats.needs_attention} onPress={handleCasePress} />
-      )}
-
-      <View
-        style={{
-          flexDirection: "row",
-          gap: spacing.sm,
-          flexWrap: "wrap",
-        }}
-      >
-        {statusCounts.length > 0 && (
-          <Card variant="filled" padding="md" style={{ marginBottom: spacing.md, flex: 1, minWidth: 200 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                color: scheme.onSurface,
-                marginBottom: spacing.xs,
-              }}
-            >
-              Status Breakdown
-            </Text>
-            {statusCounts.map(([status, count]) => (
-              <View
-                key={status}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  paddingVertical: 6,
-                  borderBottomWidth: 1,
-                  borderBottomColor: scheme.outlineVariant,
-                }}
-              >
-                <Text style={{ fontSize: 13, color: scheme.onSurface }}>
-                  {getStatusLabel(status)}
-                </Text>
-                <Text
-                  style={{ fontSize: 13, fontWeight: "700", color: scheme.onSurfaceVariant }}
-                >
-                  {count}
-                </Text>
-              </View>
-            ))}
-          </Card>
-        )}
-      </View>
-
-      <Pressable
-        onPress={() => router.push("/(officer)/cases/index")}
-        style={({ pressed }) => [
-          styles.quickNav,
-          {
-            backgroundColor: scheme.primaryContainer,
-            borderRadius: 16,
-            opacity: pressed ? 0.85 : 1,
-          },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel="Go to Case Queue"
-      >
-        <Ionicons name="list" size={22} color={scheme.onPrimaryContainer} />
-        <Text
-          style={[
-            typography.title.small,
-            { color: scheme.onPrimaryContainer, marginLeft: spacing.sm, flex: 1 },
-          ]}
-        >
-          View All Cases
-        </Text>
-        <Ionicons name="chevron-forward" size={20} color={scheme.onPrimaryContainer} />
-      </Pressable>
-    </ScrollView>
-  );
+  return <View style={styles.screen}><StatusBar style="dark" /><View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View><ScrollView contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 30, paddingBottom: insets.bottom + 104 }]} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#A95BEA" />}>{isLoading ? <View style={styles.loading}><ActivityIndicator color="#A95BEA" size="large" /><Text style={styles.loadingText}>Opening your casework…</Text></View> : <><View style={styles.topline}><View><Text style={styles.eyebrow}>PRIVATE CASEWORK</Text><Text style={styles.title}>{"Careful\ncasework."}</Text><Text style={styles.subtitle}>Your assigned safeguarding cases, kept clear and private.</Text></View><Pressable onPress={() => router.push("/(officer)/settings")} style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]} accessibilityLabel="Open officer settings"><Ionicons name="settings-outline" size={23} color="#813BBC" /></Pressable></View><View style={styles.metricGrid}><OfficerMetric icon="folder-open-outline" value={stats?.total_assigned ?? 0} label="Assigned cases" onPress={() => router.push("/(officer)/cases/index")} /><OfficerMetric icon="flame-outline" value={(stats?.by_priority?.critical ?? 0) + (stats?.by_priority?.high ?? 0)} label="High priority" tone="rose" onPress={() => router.push("/(officer)/cases/index?priority=critical")} /><OfficerMetric icon="chatbubble-ellipses-outline" value={stats?.by_status?.AWAITING_REPORTER_RESPONSE ?? 0} label="Needs response" tone="amber" /><OfficerMetric icon="search-outline" value={stats?.by_status?.UNDER_REVIEW ?? 0} label="Under review" tone="blue" /></View><PriorityOverview byPriority={stats?.by_priority ?? {}} /><AttentionList cases={stats?.needs_attention ?? []} onPress={openCase} />{statusCounts.length > 0 && <View style={styles.statusCard}><Text style={styles.cardEyebrow}>WORKFLOW</Text><Text style={styles.cardTitle}>Current case stages</Text>{statusCounts.map(([status, count]) => <View style={styles.statusRow} key={status}><Text style={styles.statusName}>{statusLabel(status)}</Text><Text style={styles.statusValue}>{count}</Text></View>)}</View>}<Pressable onPress={() => router.push("/(officer)/cases/index")} style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}><View style={styles.primaryIcon}><Ionicons name="list-outline" size={21} color="#FFFFFF" /></View><View style={styles.primaryCopy}><Text style={styles.primaryTitle}>Open case queue</Text><Text style={styles.primaryText}>Review your assigned safeguarding work.</Text></View><Ionicons name="arrow-forward" size={20} color="#FFFFFF" /></Pressable></>}</ScrollView></View>;
 }
 
 const styles = StyleSheet.create({
-  statCard: {
-    padding: 14,
-    elevation: 1,
-    boxShadow: "0px 1px 4px rgba(0,0,0,0.08)",
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  attentionItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  quickNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 18,
-    marginTop: 8,
-  },
+  screen: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  lilacArc: { position: "absolute", width: 660, height: 510, top: -315, left: -205, borderRadius: 330, backgroundColor: "#E1C1FC", opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 560, height: 410, top: 112, left: 87, borderRadius: 280, backgroundColor: "#F7EBFF", opacity: 0.78 },
+  scroll: { paddingHorizontal: 27 },
+  loading: { minHeight: 420, alignItems: "center", justifyContent: "center", gap: 12 },
+  loadingText: { color: "#817B84", fontSize: 13 },
+  topline: { flexDirection: "row", alignItems: "flex-start", gap: 16, marginBottom: 27 },
+  eyebrow: { color: "#7E36B7", fontSize: 11, fontWeight: "800", letterSpacing: 1.8, marginBottom: 10 },
+  title: { flexShrink: 1, color: "#09080A", fontSize: 35, lineHeight: 39, fontWeight: "700", letterSpacing: -1.45 },
+  subtitle: { maxWidth: 265, color: "#767178", fontSize: 13.5, lineHeight: 20, marginTop: 10 },
+  settingsButton: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center", backgroundColor: "#F1E2FD", marginTop: 3 },
+  metricGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 17 },
+  metric: { flexGrow: 1, flexBasis: "45%", minHeight: 122, borderRadius: 22, borderWidth: 1.1, borderColor: "#E2DAE5", backgroundColor: "rgba(255,255,255,0.8)", padding: 14 },
+  metricIcon: { width: 35, height: 35, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  metricValue: { color: "#19141B", fontSize: 28, lineHeight: 31, fontWeight: "800", marginTop: 12 },
+  metricLabel: { color: "#746E77", fontSize: 11.5, marginTop: 3 },
+  priorityCard: { borderRadius: 24, backgroundColor: "#F1EAF4", padding: 19, marginBottom: 13 },
+  cardHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 5 },
+  cardEyebrow: { color: "#7E36B7", fontSize: 10, fontWeight: "800", letterSpacing: 1.35, marginBottom: 5 },
+  cardTitle: { color: "#251E28", fontSize: 17, fontWeight: "800", letterSpacing: -0.3, marginBottom: 11 },
+  priorityRow: { flexDirection: "row", alignItems: "center", minHeight: 35 },
+  priorityDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  priorityLabel: { flex: 1, color: "#514A55", fontSize: 13.5 },
+  priorityCount: { minWidth: 29, minHeight: 25, borderRadius: 13, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  priorityCountText: { fontSize: 12, fontWeight: "800" },
+  attentionCard: { borderRadius: 24, borderWidth: 1.1, borderColor: "#E2DAE5", backgroundColor: "rgba(255,255,255,0.8)", padding: 17, marginBottom: 13 },
+  attentionBadge: { minWidth: 29, height: 29, borderRadius: 15, alignItems: "center", justifyContent: "center", backgroundColor: "#F1E2FD" },
+  attentionBadgeText: { color: "#7839B0", fontSize: 12, fontWeight: "800" },
+  caseRow: { flexDirection: "row", alignItems: "center", minHeight: 62, borderTopWidth: 1, borderTopColor: "#EEE7F0", gap: 9 },
+  caseSignal: { width: 4, height: 31, borderRadius: 4 },
+  caseCopy: { flex: 1, minWidth: 0 },
+  caseNumber: { color: "#302B33", fontSize: 12.5, fontWeight: "800" },
+  caseMeta: { color: "#827987", fontSize: 10.5, marginTop: 3 },
+  casePriority: { borderRadius: 11, paddingHorizontal: 7, paddingVertical: 5 },
+  casePriorityText: { fontSize: 9.5, fontWeight: "800" },
+  statusCard: { borderRadius: 23, borderWidth: 1.1, borderColor: "#E2DAE5", backgroundColor: "rgba(255,255,255,0.8)", padding: 18, marginBottom: 15 },
+  statusRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 9, borderTopWidth: 1, borderTopColor: "#EEE7F0" },
+  statusName: { color: "#5D5660", fontSize: 12.5 },
+  statusValue: { color: "#7839B0", fontSize: 14, fontWeight: "800" },
+  primaryAction: { minHeight: 78, flexDirection: "row", alignItems: "center", borderRadius: 27, backgroundColor: "#A95BEA", padding: 16, marginTop: 2, shadowColor: "#A75CDF", shadowOpacity: 0.24, shadowRadius: 11, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
+  primaryIcon: { width: 43, height: 43, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.19)", marginRight: 12 },
+  primaryCopy: { flex: 1 },
+  primaryTitle: { color: "#FFFFFF", fontSize: 16.5, fontWeight: "800" },
+  primaryText: { color: "rgba(255,255,255,0.84)", fontSize: 11.5, marginTop: 3 },
+  pressed: { opacity: 0.86, transform: [{ scale: 0.985 }] },
 });

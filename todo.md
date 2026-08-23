@@ -62,3 +62,11 @@
 - [x] Apply the reporter UI’s lilac arc artwork, white canvas, editorial hierarchy, outlined controls, and purple pill actions to all officer routes.
 - [x] Preserve officer-only secure casework actions, live Django bindings, responsive behavior, and existing RBAC boundaries.
 - [x] Validate the reporter-aligned officer experience, then commit and push the refinement.
+
+## Mobile Officer and Administrator Reporter-Style Redesign
+
+- [x] Audit all React Native officer and administrator routes, tab shells, dashboards, and protected workflows.
+- [x] Define and apply the reporter UI’s lilac artwork, white canvas, editorial hierarchy, outlined controls, and purple actions to officer mobile routes.
+- [x] Define and apply the reporter UI’s lilac artwork, white canvas, editorial hierarchy, outlined controls, and purple actions to administrator mobile routes.
+- [x] Preserve officer and administrator data access, case/report actions, navigation, and RBAC behavior while refreshing the mobile UI.
+- [x] Run mobile regression tests and a production export, then commit and push the completed mobile redesign.

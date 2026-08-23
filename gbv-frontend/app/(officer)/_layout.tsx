@@ -1,8 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Stack } from "expo-router/stack";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "../../src/theme/ThemeProvider";
+import { StatusBar } from "expo-status-bar";
 import { useBreakpoint, isWide } from "../../src/hooks/useBreakpoint";
 import { TabBar, SideRail } from "../../src/components/navigation";
 import type { TabDefinition } from "../../src/components/navigation/TabBar";
@@ -24,7 +23,6 @@ function getActiveTab(pathname: string): string {
 }
 
 export default function OfficerLayout() {
-  const { scheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const bp = useBreakpoint();
@@ -32,11 +30,12 @@ export default function OfficerLayout() {
   const activeTab = getActiveTab(pathname);
 
   const handleTabPress = (key: string) => {
-    router.replace(`/(officer)/${key === "index" ? "" : key}`);
+    router.replace(`/(officer)/${key === "index" ? "" : key}` as never);
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       <View style={styles.row}>
         {wide && <SideRail tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />}
         <View style={styles.content}>
@@ -51,13 +50,13 @@ export default function OfficerLayout() {
           </Stack>
         </View>
       </View>
-      {!wide && <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />}
-    </SafeAreaView>
+      {!wide && <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} tone="auth" />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#FEFDFE" },
   row: { flex: 1, flexDirection: "row" },
   content: { flex: 1 },
 });

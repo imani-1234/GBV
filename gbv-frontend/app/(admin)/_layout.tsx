@@ -2,7 +2,8 @@ import { useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Stack } from "expo-router/stack";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { BrandLockup } from "../../src/components/branding/BrandLockup";
@@ -58,8 +59,8 @@ export default function AdminLayout() {
         styles.sidebar,
         {
           width: SIDEBAR_WIDTH,
-          backgroundColor: scheme.surface,
-          borderRightColor: scheme.outlineVariant,
+          backgroundColor: "#FEFDFE",
+          borderRightColor: "#E7DFE9",
           paddingTop: insets.top + spacing.md,
         },
       ]}
@@ -67,8 +68,8 @@ export default function AdminLayout() {
       <View style={[styles.brand, { paddingHorizontal: spacing.md, marginBottom: spacing.lg }]}>
         <BrandLockup variant="icon" width={40} height={40} />
         <View style={{ marginLeft: spacing.sm }}>
-          <Text style={[typography.title.small, styles.brandName, { color: scheme.onSurface }]}>Sauti Yako</Text>
-          <Text style={[typography.label.small, { color: scheme.onSurfaceVariant, marginTop: 1 }]}>ADMIN CONSOLE</Text>
+          <Text style={[typography.title.small, styles.brandName, { color: "#211B24" }]}>Sauti Yako</Text>
+          <Text style={[typography.label.small, { color: "#817784", marginTop: 1 }]}>ADMIN CONSOLE</Text>
         </View>
       </View>
 
@@ -94,22 +95,22 @@ export default function AdminLayout() {
                   paddingHorizontal: spacing.md,
                 },
                 isActive && {
-                  backgroundColor: scheme.tertiaryContainer + "40",
+                  backgroundColor: "#F1E2FD",
                   borderLeftWidth: 3,
-                  borderLeftColor: scheme.tertiary,
+                  borderLeftColor: "#813BBC",
                 },
               ]}
             >
               <Ionicons
                 name={isActive && item.activeIcon ? item.activeIcon : item.icon}
                 size={22}
-                color={isActive ? scheme.tertiary : scheme.onSurfaceVariant}
+                color={isActive ? "#813BBC" : "#817784"}
               />
               <Text
                 style={[
                   typography.label.large,
                   {
-                    color: isActive ? scheme.tertiary : scheme.onSurfaceVariant,
+                    color: isActive ? "#813BBC" : "#817784",
                     marginLeft: spacing.md,
                     fontWeight: isActive ? "700" : "400",
                   },
@@ -125,7 +126,8 @@ export default function AdminLayout() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={[]}>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
       {wide && sidebar}
 
       {!wide && drawerOpen && (
@@ -139,18 +141,18 @@ export default function AdminLayout() {
             style={[
               styles.topBar,
               {
-                backgroundColor: scheme.surface,
-                borderBottomColor: scheme.outlineVariant,
+                backgroundColor: "#FEFDFE",
+                borderBottomColor: "#E7DFE9",
                 paddingTop: insets.top,
               },
             ]}
           >
             <Pressable onPress={() => setDrawerOpen(true)} style={{ padding: spacing.sm }}>
-              <Ionicons name="menu" size={24} color={scheme.onSurface} />
+              <Ionicons name="menu" size={24} color="#211B24" />
             </Pressable>
             <View>
-              <Text style={[typography.title.small, styles.mobileTitle, { color: scheme.onSurface }]}>Sauti Yako</Text>
-              <Text style={[typography.label.small, { color: scheme.onSurfaceVariant }]}>Admin console</Text>
+              <Text style={[typography.title.small, styles.mobileTitle, { color: "#211B24" }]}>Sauti Yako</Text>
+              <Text style={[typography.label.small, { color: "#817784" }]}>Admin console</Text>
             </View>
             <View style={{ width: 40 }} />
           </View>
@@ -167,7 +169,7 @@ export default function AdminLayout() {
           <Stack.Screen name="settings" />
         </Stack>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -11,6 +11,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { FlashList } from "@shopify/flash-list";
 import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../src/theme/ThemeProvider";
 import {
@@ -93,8 +94,10 @@ function CaseListItem({
       style={({ pressed }) => [
         styles.listItem,
         {
-          backgroundColor: isSelected ? scheme.primaryContainer : scheme.surface,
-          borderRadius: br.lg,
+          backgroundColor: isSelected ? "#F5E9FF" : "rgba(255,255,255,0.84)",
+          borderRadius: 21,
+          borderWidth: 1.1,
+          borderColor: isSelected ? "#D3B5EA" : "#E2DAE5",
           opacity: pressed ? 0.85 : 1,
         },
       ]}
@@ -114,7 +117,7 @@ function CaseListItem({
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
             <Text
-              style={[typography.title.small, { color: scheme.onSurface, flex: 1 }]}
+              style={[typography.title.small, { color: "#302B33", flex: 1, fontWeight: "800" }]}
               numberOfLines={1}
             >
               {item.report?.case_number ? `#${item.report.case_number}` : "Unassigned Case"}
@@ -123,7 +126,7 @@ function CaseListItem({
               style={{
                 paddingHorizontal: 8,
                 paddingVertical: 2,
-                borderRadius: 4,
+                borderRadius: 11,
                 backgroundColor: priorityColor.bg,
               }}
             >
@@ -140,7 +143,7 @@ function CaseListItem({
             </View>
           </View>
           <Text
-            style={[typography.body.small, { color: scheme.onSurfaceVariant, marginTop: 2 }]}
+            style={[typography.body.small, { color: "#817784", marginTop: 3 }]}
             numberOfLines={1}
           >
             {item.report?.category?.name || "Incident Report"}
@@ -151,7 +154,7 @@ function CaseListItem({
                 {
                   paddingHorizontal: 8,
                   paddingVertical: 2,
-                  borderRadius: 4,
+                  borderRadius: 11,
                   backgroundColor: `${getStatusColor(item.status, scheme)}18`,
                 },
               ]}
@@ -166,7 +169,7 @@ function CaseListItem({
                 {STATUS_LABELS[item.status] || item.status}
               </Text>
             </View>
-            <Text style={{ fontSize: 11, color: scheme.onSurfaceVariant }}>
+            <Text style={{ fontSize: 11, color: "#918793" }}>
               {item.updated_at
                 ? new Date(item.updated_at).toLocaleDateString("en-US", {
                     month: "short",
@@ -176,7 +179,7 @@ function CaseListItem({
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={scheme.onSurfaceVariant} />
+        <Ionicons name="chevron-forward" size={16} color="#918793" />
       </View>
     </Pressable>
   );
@@ -472,11 +475,13 @@ export default function CasesList() {
       <View style={{ paddingHorizontal: spacing.sm, paddingBottom: spacing.sm }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: scheme.surfaceVariant,
-                borderRadius: 12,
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: "rgba(255,255,255,0.85)",
+              borderRadius: 23,
+              borderWidth: 1.1,
+              borderColor: "#E2DAE5",
                 flex: 1,
                 flexDirection: "row",
                 alignItems: "center",
@@ -484,21 +489,21 @@ export default function CasesList() {
               },
             ]}
           >
-            <Ionicons name="search" size={18} color={scheme.onSurfaceVariant} />
+          <Ionicons name="search" size={18} color="#8A818D" />
             <TextInput
               value={search}
               onChangeText={setSearch}
               placeholder="Search by case number..."
-              placeholderTextColor={scheme.onSurfaceVariant}
+              placeholderTextColor="#A198A4"
               style={[
                 typography.body.medium,
-                { color: scheme.onSurface, flex: 1, paddingVertical: 10, marginLeft: 8 },
+                { color: "#302B33", flex: 1, paddingVertical: 10, marginLeft: 8 },
               ]}
               accessibilityLabel="Search cases by number"
             />
             {search.length > 0 && (
               <Pressable onPress={() => setSearch("")} accessibilityLabel="Clear search">
-                <Ionicons name="close-circle" size={18} color={scheme.onSurfaceVariant} />
+                <Ionicons name="close-circle" size={18} color="#8A818D" />
               </Pressable>
             )}
           </View>
@@ -507,8 +512,10 @@ export default function CasesList() {
             style={[
               styles.filterBtn,
               {
-                backgroundColor: activeFilterCount > 0 ? scheme.primaryContainer : scheme.surfaceVariant,
-                borderRadius: 12,
+                backgroundColor: activeFilterCount > 0 ? "#F1E2FD" : "rgba(255,255,255,0.85)",
+                borderRadius: 22,
+                borderWidth: 1.1,
+                borderColor: "#E2DAE5",
               },
             ]}
             accessibilityLabel="Open filters"
@@ -517,7 +524,7 @@ export default function CasesList() {
             <Ionicons
               name="funnel"
               size={18}
-              color={activeFilterCount > 0 ? scheme.onPrimaryContainer : scheme.onSurfaceVariant}
+              color={activeFilterCount > 0 ? "#813BBC" : "#817784"}
             />
             {activeFilterCount > 0 && (
               <View
@@ -544,7 +551,7 @@ export default function CasesList() {
         <Text
           style={[
             typography.body.small,
-            { color: scheme.onSurfaceVariant, marginTop: spacing.sm },
+            { color: "#817784", marginTop: spacing.sm, marginLeft: 3 },
           ]}
         >
           {data?.count != null ? `${data.count} case${data.count !== 1 ? "s" : ""}` : ""}
@@ -570,14 +577,13 @@ export default function CasesList() {
 
   const listComponent = useMemo(
     () => (
-      <View style={{ flex: 1, backgroundColor: scheme.background }}>
-        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.md }}>
-          <Text style={[typography.headline.small, { color: scheme.onBackground, marginBottom: 4 }]}>
-            Case Queue
-          </Text>
-          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>
-            Manage and review assigned cases
-          </Text>
+      <View style={styles.queueScreen}>
+        <StatusBar style="dark" />
+        <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
+        <View style={styles.queueHeading}>
+          <Text style={styles.queueEyebrow}>PRIVATE CASEWORK</Text>
+          <Text style={styles.queueTitle}>{"Case\nqueue."}</Text>
+          <Text style={styles.queueSubtitle}>Review, protect, and move each assigned case forward.</Text>
         </View>
 
         {isLoading ? (
@@ -588,7 +594,8 @@ export default function CasesList() {
             renderItem={renderItem}
             keyExtractor={listKeyExtractor}
             contentContainerStyle={{
-              padding: spacing.md,
+              paddingHorizontal: spacing.md,
+              paddingTop: spacing.md,
               paddingBottom: insets.bottom + 100,
             }}
             ListHeaderComponent={listHeader}
@@ -694,4 +701,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  queueScreen: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  lilacArc: { position: "absolute", width: 640, height: 430, top: -300, left: -190, borderRadius: 320, backgroundColor: "#E1C1FC", opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 540, height: 350, top: 108, left: 86, borderRadius: 270, backgroundColor: "#F7EBFF", opacity: 0.78 },
+  queueHeading: { paddingHorizontal: 27, paddingTop: 58, paddingBottom: 18 },
+  queueEyebrow: { color: "#7E36B7", fontSize: 10.5, fontWeight: "800", letterSpacing: 1.75, marginBottom: 9 },
+  queueTitle: { color: "#09080A", fontSize: 33, lineHeight: 37, fontWeight: "700", letterSpacing: -1.35 },
+  queueSubtitle: { color: "#767178", fontSize: 13, lineHeight: 19, marginTop: 8 },
 });
