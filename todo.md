@@ -16,3 +16,8 @@
 - [x] Rebuild the React Native login screen to match the supplied reference’s lilac arc, outlined pill fields, action button, and social row.
 - [x] Rebuild the React Native registration screen to match the supplied reference while preserving account creation behavior.
 - [x] Validate the mobile authentication UI and interactions, then commit and push the update.
+
+## Mobile Welcome Reference Alignment
+
+- [x] Redesign the React Native welcome screen to share the lilac arc, spacious hierarchy, and purple pill controls used by login and registration.
+- [x] Validate welcome navigation to the existing sign-in and account-creation flows, then commit and push the update.
