@@ -70,3 +70,10 @@
 - [x] Define and apply the reporter UI’s lilac artwork, white canvas, editorial hierarchy, outlined controls, and purple actions to administrator mobile routes.
 - [x] Preserve officer and administrator data access, case/report actions, navigation, and RBAC behavior while refreshing the mobile UI.
 - [x] Run mobile regression tests and a production export, then commit and push the completed mobile redesign.
+
+## Reporter-Style Administrator Navigation Refinement
+
+- [x] Audit the existing mobile administrator side panel and reporter navigation patterns.
+- [x] Replace the administrator mobile side panel with a reporter-style primary navigation and a compact governance navigation entry point.
+- [x] Refine the administrator shell across phone and wide layouts while preserving every governance route.
+- [x] Validate administrator routing, tests, and production export, then commit and push the navigation refinement.
