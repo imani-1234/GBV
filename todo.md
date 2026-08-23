@@ -55,3 +55,10 @@
 - [x] Redesign administrator and officer dashboards with clear safeguarding priorities, actionable KPIs, and professional operational hierarchy.
 - [x] Redesign case, report, follow-up, messaging, analytics, team, governance, and settings interfaces while preserving live Django API behavior and RBAC.
 - [x] Validate desktop and mobile-responsive role-based workflows, then commit and push the complete web-console redesign.
+
+## Reporter-Aligned Officer Interface
+
+- [x] Audit the officer dashboard, case queue, report review, and shell against the refreshed reporter mobile design system.
+- [x] Apply the reporter UI’s lilac arc artwork, white canvas, editorial hierarchy, outlined controls, and purple pill actions to all officer routes.
+- [x] Preserve officer-only secure casework actions, live Django bindings, responsive behavior, and existing RBAC boundaries.
+- [x] Validate the reporter-aligned officer experience, then commit and push the refinement.

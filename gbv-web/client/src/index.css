@@ -179,3 +179,63 @@ h1, h2, h3 { color: var(--ink); letter-spacing: -.04em; }
 @media (max-width: 760px) { .login-page { display: block; background: #fff; }.login-visual { display: none; }.login-panel { min-height: 100vh; align-items: start; padding: 34px 20px 42px; }.login-panel__inner { width: 100%; max-width: 480px; }.login-mobile-brand { display: block; }.login-panel h2 { font-size: 31px; }.role-options { grid-template-columns: 1fr; }.login-notice { margin-top: 16px; }.page-stack { gap: 19px; } }
 @media (prefers-reduced-motion: no-preference) { .metric-card, .surface-card, .report-summary, .analytics-metric, .team-summary > div { animation: surface-in .34s var(--ease-out) both; }.metric-card:nth-child(2), .report-summary:nth-child(2), .analytics-metric:nth-child(2) { animation-delay: 40ms; }.metric-card:nth-child(3), .report-summary:nth-child(3), .analytics-metric:nth-child(3) { animation-delay: 80ms; }.metric-card:nth-child(4), .report-summary:nth-child(4), .analytics-metric:nth-child(4) { animation-delay: 120ms; } }
 @keyframes surface-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Officer workbench — intentionally mirrors the reporter experience while
+   retaining the dense controls needed for protected casework. */
+.app-shell--officer { background: #fefcfe; }
+.command-rail--officer { color: var(--ink); background: #fff; box-shadow: 10px 0 35px rgba(72,35,91,.08); }
+.command-rail--officer::before { top: -264px; right: -190px; width: 455px; height: 455px; border: 0; background: #e2c1fc; box-shadow: 0 0 0 35px rgba(247,235,255,.9); }
+.command-rail--officer::after { bottom: -150px; left: -190px; width: 310px; height: 310px; border-color: rgba(142,69,207,.14); }
+.command-rail--officer .brand-mark__text span { color: var(--ink); }
+.command-rail--officer .brand-mark__text small { color: #8b7d92; }
+.command-rail--officer .role-switcher { border-color: #e1d6e6; color: #302a33; background: rgba(255,255,255,.84); box-shadow: 0 8px 19px rgba(92,51,112,.06); }
+.command-rail--officer .role-switcher small { color: #82768a; }
+.command-rail--officer .role-switcher__dot { background: var(--purple); box-shadow: 0 0 0 5px rgba(142,69,207,.12); }
+.command-rail--officer .nav-caption { color: #8a6c9f; }
+.command-rail--officer .nav-item { color: #6e6274; }
+.command-rail--officer .nav-item:hover { color: var(--plum); background: #faf4ff; }
+.command-rail--officer .nav-item--active { color: var(--plum); background: #f0e1fc; box-shadow: inset 3px 0 0 var(--purple); }
+.command-rail--officer .privacy-pledge { color: #86778d; }
+.command-rail--officer .privacy-pledge svg { color: var(--purple); }
+.command-rail--officer .profile-card { border-top-color: #e9e0eb; color: #302a33; }
+.command-rail--officer .profile-card small, .command-rail--officer .profile-card svg { color: #86778d; }
+.command-rail--officer .profile-card__avatar { color: #fff; background: var(--purple); }
+.workbench--officer { background: radial-gradient(circle at 94% -5%, rgba(232,207,252,.7), transparent 26%), #fefcfe; }
+.workbench--officer .topbar { border-bottom-color: #eee6f0; background: rgba(254,252,254,.84); }
+.workbench--officer .workspace-banner { color: #754c8e; background: #f5eafe; }
+.workbench--officer .workspace-banner__signal { background: var(--purple); }
+.page-stack--officer { gap: 26px; }
+.page-stack--officer .hero-panel { min-height: 294px; border: 0; border-radius: 30px; color: var(--ink); background: #fff !important; box-shadow: 0 13px 35px rgba(69,29,88,.08); }
+.page-stack--officer .hero-panel::before { top: -362px; left: -130px; right: auto; width: 690px; height: 560px; border: 0; background: #e2c1fc; box-shadow: none; opacity: .95; }
+.page-stack--officer .hero-panel::after { right: -73px; bottom: -220px; width: 425px; height: 425px; border: 0; background: #f6eaff; box-shadow: none; }
+.page-stack--officer .hero-panel h1 { color: #080709; font-family: "Libre Baskerville", serif; font-size: clamp(31px,4vw,45px); line-height: 1.18; }
+.page-stack--officer .hero-panel h1 em { color: #7837af; }
+.page-stack--officer .hero-panel p { color: #746d76; }
+.page-stack--officer .hero-panel .eyebrow { color: #7837af; }
+.page-stack--officer .hero-panel .button--primary { color: #fff; background: #a95bea; box-shadow: 0 10px 21px rgba(169,91,234,.24); }
+.page-stack--officer .hero-panel .button--primary:hover { background: #9144cf; }
+.page-stack--officer .hero-panel .button--outline { border-color: #d8c9e1; color: #7038a0; background: rgba(255,255,255,.9); }
+.page-stack--officer .hero-panel__signal { border-color: #e2d4e8; color: var(--ink-soft); background: rgba(255,255,255,.9); box-shadow: 0 8px 18px rgba(64,30,81,.06); }
+.page-stack--officer .hero-panel__signal small { color: #8a7b91; }
+.page-stack--officer .hero-panel__signal strong { color: #2b2630; }
+.page-stack--officer .signal-dot { background: #a95bea; box-shadow: 0 0 0 5px rgba(169,91,234,.13); }
+.page-stack--officer .section-head h2, .page-stack--officer .page-title-row h1 { color: #09080a; }
+.page-stack--officer .page-title-row { padding: 16px 20px; border: 1px solid #eee5f1; border-radius: 26px; background: rgba(255,255,255,.78); }
+.page-stack--officer .page-title-row::after { right: -35px; bottom: -113px; border-color: rgba(169,91,234,.16); }
+.page-stack--officer .surface-card, .page-stack--officer .case-dossier { border-color: #e5dce8; border-radius: 25px; background: rgba(255,255,255,.93); box-shadow: 0 10px 28px rgba(64,30,81,.055); }
+.page-stack--officer .metric-card { border-color: #e5dce8; border-radius: 23px; background: #fff; }
+.page-stack--officer .metric-card__rule { background: #a95bea; }
+.page-stack--officer .case-table__row:hover, .page-stack--officer .case-table__row--selected, .page-stack--officer .report-table__row:hover, .page-stack--officer .report-table__row--selected { background: #fbf5ff; box-shadow: inset 3px 0 0 #a95bea; }
+.page-stack--officer .case-toolbar { border-bottom-color: #efe7f1; }
+.page-stack--officer .case-search, .page-stack--officer .dossier-block input, .page-stack--officer .dossier-block select { border-color: #ded3e3; border-radius: 20px; }
+.page-stack--officer .status-filter, .page-stack--officer .segmented-control { border-radius: 22px; background: #f4ecf8; }
+.page-stack--officer .status-filter button, .page-stack--officer .segmented-control button { border-radius: 18px; }
+.page-stack--officer .status-filter button.is-active, .page-stack--officer .segmented-control button.is-active { color: #7134a7; background: #fff; }
+.page-stack--officer .dossier-safety { border-color: #dfc9f1; background: #f6ebff; }
+.page-stack--officer .dossier-safety > div, .page-stack--officer .dossier-visual > span { color: #7839aa; }
+.page-stack--officer .dossier-safety > strong, .page-stack--officer .dossier-visual strong { color: #301345; }
+.page-stack--officer .dossier-visual { background: linear-gradient(90deg, rgba(253,248,255,.98), rgba(247,235,255,.83)) !important; }
+.page-stack--officer .button--primary { background: #a95bea; box-shadow: 0 10px 20px rgba(169,91,234,.18); }
+.page-stack--officer .button--primary:hover { background: #9144cf; }
+.page-stack--officer .button--outline { border-color: #d8c9e1; color: #7038a0; }
+@media (max-width: 860px) { .command-rail--officer { box-shadow: 14px 0 38px rgba(72,35,91,.16); }.page-stack--officer .hero-panel { min-height: 280px; }.page-stack--officer .hero-panel::before { top: -340px; left: -190px; width: 620px; }.page-stack--officer .hero-panel__signal { display: none; } }

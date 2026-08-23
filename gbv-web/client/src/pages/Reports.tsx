@@ -88,7 +88,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="page-stack">
+    <div className={`page-stack ${isAdmin ? "" : "page-stack--officer"}`}>
       <section className="page-title-row">
         <div>
           <div className="eyebrow">{isAdmin ? "Intake and disclosure" : "Officer review"}</div>
