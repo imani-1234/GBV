@@ -13,6 +13,7 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
     "login": "100000/hour",
     "register": "100000/hour",
     "anonymous_register": "100000/hour",
+    "password_reset": "100000/hour",
     "burst": "100000/minute",
     "sustained": "100000/hour",
 }

@@ -15,7 +15,7 @@ class UserAdmin(admin.ModelAdmin):
         ("Permissions", {"fields": ("role", "is_staff", "is_superuser", "is_active", "groups", "user_permissions")}),
         ("Important Dates", {"fields": ("last_login", "date_joined")}),
     )
-    readonly_fields = ("date_joined", "last_login")
+    readonly_fields = ("date_joined", "last_login", "password_changed_at")
 
 
 @admin.register(AnonymousReporter)

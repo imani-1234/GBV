@@ -3,6 +3,7 @@ import uuid
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -54,6 +55,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_anonymous_reporter = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    password_changed_at = models.DateTimeField(default=timezone.now)
+    password_version = models.PositiveIntegerField(default=0)
 
     objects = UserManager()
 
@@ -69,6 +72,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    def set_password(self, raw_password):
+        super().set_password(raw_password)
+        self.password_changed_at = timezone.now()
+        self.password_version = (self.password_version or 0) + 1
 
     @property
     def is_reporter(self):

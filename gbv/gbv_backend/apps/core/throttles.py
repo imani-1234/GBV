@@ -13,6 +13,10 @@ class AnonymousRegisterRateThrottle(AnonRateThrottle):
     scope = "anonymous_register"
 
 
+class PasswordResetRateThrottle(AnonRateThrottle):
+    scope = "password_reset"
+
+
 class BurstRateThrottle(UserRateThrottle):
     scope = "burst"
 

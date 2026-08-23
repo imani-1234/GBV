@@ -224,4 +224,10 @@ class CustomJWTAuthentication(JWTAuthentication):
             return AnonymousUser()
         if not user.is_active:
             return AnonymousUser()
+        if int(validated_token.get("pwd", -1)) != user.password_version:
+            return AnonymousUser()
+        issued_at = validated_token.get("iat")
+        password_changed_at = getattr(user, "password_changed_at", None)
+        if issued_at and password_changed_at and int(issued_at) < int(password_changed_at.timestamp()):
+            return AnonymousUser()
         return user

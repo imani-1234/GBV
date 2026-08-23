@@ -86,7 +86,11 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -140,6 +144,7 @@ REST_FRAMEWORK = {
         "login": "10/hour",
         "register": "5/hour",
         "anonymous_register": "3/hour",
+        "password_reset": "5/hour",
         "burst": "60/minute",
         "sustained": "1000/hour",
     },
@@ -204,6 +209,11 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@gbv-system.org"
 
 BASE_URL = decouple.config("BASE_URL", default="http://localhost:8000")
+PASSWORD_RESET_TIMEOUT = decouple.config("PASSWORD_RESET_TIMEOUT_SECONDS", default=86_400, cast=int)
+PASSWORD_RESET_CONFIRM_URL = decouple.config(
+    "PASSWORD_RESET_CONFIRM_URL",
+    default="http://localhost:3000/reset-password",
+)
 
 # Security
 SECURE_BROWSER_XSS_FILTER = True
