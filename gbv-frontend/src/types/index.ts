@@ -39,6 +39,10 @@ export interface AnonymousRegisterResponse {
   user?: User;
 }
 
+export interface AnonymousRegisterPayload {
+  password: string;
+}
+
 export interface AnonymousLoginPayload {
   reporter_code: string;
   password: string;

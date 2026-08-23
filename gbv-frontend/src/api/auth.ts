@@ -2,6 +2,7 @@ import apiClient from "./client";
 import type {
   AuthTokens,
   LoginPayload,
+  AnonymousRegisterPayload,
   RegisterPayload,
   AnonymousLoginPayload,
   AnonymousRegisterResponse,
@@ -17,8 +18,8 @@ export const authApi = {
   register: (data: RegisterPayload) =>
     apiClient.post<User>("/auth/register/", data).then((r) => r.data),
 
-  anonymousRegister: () =>
-    apiClient.post<AnonymousRegisterResponse>("/auth/anonymous/register/").then((r) => r.data),
+  anonymousRegister: (data: AnonymousRegisterPayload) =>
+    apiClient.post<AnonymousRegisterResponse>("/auth/anonymous/register/", data).then((r) => r.data),
 
   anonymousLogin: (data: AnonymousLoginPayload) =>
     apiClient.post<AuthTokens>("/auth/anonymous/login/", data).then((r) => r.data),

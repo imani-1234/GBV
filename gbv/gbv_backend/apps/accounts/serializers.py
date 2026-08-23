@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.db import IntegrityError, transaction
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
@@ -51,14 +52,21 @@ class AnonymousRegisterSerializer(serializers.Serializer):
     reporter_code = serializers.CharField(read_only=True)
 
     def create(self, validated_data):
-        code_gen = generate_reporter_code()
-        for _ in range(10):
-            code = next(code_gen)
-            if not AnonymousReporter.objects.filter(reporter_code=code).exists():
-                break
-        else:
-            raise serializers.ValidationError("Could not generate unique code")
-        return AnonymousReporter.objects.create(reporter_code=code, hashed_password=make_password(validated_data["password"]))
+        # A database-level unique constraint is authoritative. Retrying the
+        # create inside a transaction handles the tiny race between generating
+        # a code and persisting it without exposing a collision to the reporter.
+        for _ in range(32):
+            try:
+                with transaction.atomic():
+                    return AnonymousReporter.objects.create(
+                        reporter_code=generate_reporter_code(),
+                        hashed_password=make_password(validated_data["password"]),
+                    )
+            except IntegrityError:
+                continue
+        raise serializers.ValidationError(
+            {"detail": "We could not create an anonymous Reporter Code right now. Please try again."}
+        )
 
 
 class AnonymousLoginSerializer(serializers.Serializer):

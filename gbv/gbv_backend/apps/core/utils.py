@@ -1,5 +1,5 @@
 import os
-import random
+import secrets
 import string
 
 from django.conf import settings
@@ -25,10 +25,9 @@ ALLOWED_MIME_TYPES = {
 
 
 def generate_reporter_code(length=6):
+    """Return a short, opaque code for an anonymous reporter identity."""
     chars = string.ascii_uppercase + string.digits
-    while True:
-        code = "".join(random.choices(chars, k=length))
-        yield code
+    return "".join(secrets.choice(chars) for _ in range(length))
 
 
 def validate_file_type(file_obj):

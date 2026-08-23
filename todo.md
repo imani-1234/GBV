@@ -27,3 +27,10 @@
 - [x] Redesign the Immediate Help screen with the lilac arc, white canvas, and purple control language used across mobile authentication.
 - [x] Redesign the report-mode choice screen with reference-aligned layout while preserving identified and anonymous reporting routes.
 - [x] Validate support and reporting navigation, then commit and push the update.
+
+## Anonymous Reporting Reliability and UI
+
+- [x] Diagnose and fix anonymous reporter code generation so registration no longer returns a 400 error.
+- [x] Add backend regression coverage for unique anonymous codes and complete anonymous registration/login behavior.
+- [x] Rebuild anonymous account access and the anonymous reporting cycle with the reference-matched mobile UI.
+- [x] Validate the end-to-end anonymous reporting flow, then commit and push the update.

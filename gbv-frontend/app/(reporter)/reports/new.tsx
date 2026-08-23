@@ -7,6 +7,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 import { useTheme } from "../../../src/theme/ThemeProvider";
 import { Button, TextField, Card, Chip, Divider, Stepper, AnimatedStepContent } from "../../../src/components/ui";
 import { reportsApi } from "../../../src/api/reports";
@@ -588,18 +589,26 @@ export default function ReportWizard() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <StatusBar style="dark" />
+      <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={{ padding: 4 }}>
-          <Ionicons name="close" size={24} color={scheme.onBackground} />
+        <Pressable onPress={() => router.back()} style={styles.closeButton} hitSlop={12}>
+          <Ionicons name="chevron-back" size={31} color="#141115" />
         </Pressable>
-        <Text style={[typography.title.small, { color: scheme.onBackground }]}>New Report</Text>
-        <Pressable onPress={handleSaveDraft} style={{ padding: 4 }}>
-          <Text style={[typography.label.large, { color: scheme.primary }]}>Save</Text>
+        <Pressable onPress={handleSaveDraft} style={styles.saveButton}>
+          <Text style={styles.saveText}>Save draft</Text>
         </Pressable>
       </View>
 
-      <Stepper steps={STEPS} currentStep={step} />
+      <View style={styles.titleBlock}>
+        <Text style={styles.wizardTitle}>Create{`\n`}report</Text>
+        <View style={styles.progressMeta}>
+          <Text style={styles.progressLabel}>{STEPS[step].label}</Text>
+          <Text style={styles.progressCount}>{step + 1} / {STEPS.length}</Text>
+        </View>
+        <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${((step + 1) / STEPS.length) * 100}%` }]} /></View>
+      </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView
@@ -615,12 +624,12 @@ export default function ReportWizard() {
       </KeyboardAvoidingView>
 
       {step < STEPS.length - 1 && (
-        <View style={[styles.footer, { borderTopColor: scheme.outlineVariant, paddingBottom: insets.bottom + 8 }]}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+          <View style={styles.footerActions}>
             {step > 0 && (
-              <Button title="Back" variant="outlined" onPress={() => setStep((s) => s - 1)} style={{ flex: 1 }} />
+              <Pressable onPress={() => setStep((s) => s - 1)} style={styles.backAction}><Text style={styles.backActionText}>Back</Text></Pressable>
             )}
-            <Button title="Next" variant="filled" onPress={handleNext} style={{ flex: step > 0 ? 1 : undefined }} />
+            <Pressable onPress={handleNext} style={[styles.nextAction, step === 0 && styles.nextActionSolo]}><Text style={styles.nextActionText}>Next</Text><Ionicons name="arrow-forward" size={21} color="#FFFFFF" /></Pressable>
           </View>
         </View>
       )}
@@ -629,9 +638,21 @@ export default function ReportWizard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8 },
-  scrollContent: { padding: 24, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  lilacArc: { position: "absolute", width: 620, height: 430, top: -250, left: -205, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 540, height: 370, left: 90, top: 105, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 32, paddingTop: 8, minHeight: 52 },
+  closeButton: { padding: 4 },
+  saveButton: { paddingVertical: 8, paddingHorizontal: 10 },
+  saveText: { color: "#7E36B7", fontSize: 13.5, fontWeight: "800" },
+  titleBlock: { paddingHorizontal: 36, paddingTop: 15, paddingBottom: 20 },
+  wizardTitle: { color: "#070707", fontSize: 34, lineHeight: 38, fontWeight: "700", letterSpacing: -1.35 },
+  progressMeta: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 15 },
+  progressLabel: { color: "#7E36B7", fontSize: 13, fontWeight: "800" },
+  progressCount: { color: "#817B84", fontSize: 12.5, fontWeight: "700" },
+  progressTrack: { height: 4, borderRadius: 2, backgroundColor: "#E9DFEE", overflow: "hidden", marginTop: 8 },
+  progressFill: { height: "100%", borderRadius: 2, backgroundColor: "#A95BEA" },
+  scrollContent: { paddingHorizontal: 36, paddingTop: 8, paddingBottom: 36 },
   optionCard: { padding: 16, marginBottom: 8, borderWidth: 1 },
   dateButton: { flexDirection: "row", alignItems: "center", padding: 16, borderWidth: 1.5, marginTop: 8 },
   textArea: { borderWidth: 1.5 },
@@ -647,5 +668,11 @@ const styles = StyleSheet.create({
   mediaProgress: { flexDirection: "row", alignItems: "center", padding: 12 },
   fileRow: { flexDirection: "row", alignItems: "center", padding: 12 },
   checkRow: { flexDirection: "row", alignItems: "center" },
-  footer: { paddingHorizontal: 16, paddingTop: 8, borderTopWidth: 1 },
+  footer: { paddingHorizontal: 36, paddingTop: 11, backgroundColor: "rgba(254,253,254,0.96)", borderTopColor: "#EAE4EA", borderTopWidth: 1 },
+  footerActions: { flexDirection: "row", gap: 10 },
+  backAction: { height: 54, minWidth: 96, borderWidth: 1.25, borderColor: "#B7B1B9", borderRadius: 27, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+  backActionText: { color: "#5E5861", fontSize: 15, fontWeight: "700" },
+  nextAction: { flex: 1, height: 54, borderRadius: 27, backgroundColor: "#A95BEA", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingHorizontal: 20 },
+  nextActionSolo: { flex: 0, minWidth: 136, marginLeft: "auto" },
+  nextActionText: { color: "#FFFFFF", fontSize: 15.5, fontWeight: "700" },
 });
