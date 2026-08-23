@@ -44,7 +44,7 @@ function CreateOfficerModal({
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 24 }} onPress={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 24 }} onPress={onClose}>
         <Pressable style={{ backgroundColor: scheme.surface, borderRadius: br.xl, padding: spacing.lg }} onPress={() => {}}>
           <Text style={[typography.title.medium, { color: scheme.onSurface, marginBottom: spacing.md }]}>Create Officer</Text>
 

@@ -252,7 +252,7 @@ function PriorityPicker({
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 32 }}
+        style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 32 }}
         onPress={onClose}
       >
         <Pressable
@@ -984,7 +984,7 @@ export default function OfficerCaseDetailScreen() {
       {/* Transition Note Modal */}
       <Modal transparent animationType="fade" visible={transitionModalOpen} onRequestClose={() => setTransitionModalOpen(false)}>
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 32 }}
+          style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 32 }}
           onPress={() => setTransitionModalOpen(false)}
         >
           <Pressable

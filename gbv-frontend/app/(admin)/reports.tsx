@@ -161,7 +161,7 @@ export default function AdminReportsScreen() {
 
       {selectedId && (
         <Modal transparent animationType="slide" onRequestClose={() => setSelectedId(null)} statusBarTranslucent>
-          <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }} onPress={() => setSelectedId(null)}>
+          <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "flex-end" }} onPress={() => setSelectedId(null)}>
             <Pressable
               style={{ backgroundColor: scheme.background, borderTopLeftRadius: br.xl, borderTopRightRadius: br.xl, maxHeight: "92%", paddingBottom: insets.bottom + spacing.md }}
               onPress={() => {}}

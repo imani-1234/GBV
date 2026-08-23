@@ -83,3 +83,9 @@
 - [x] Audit top spacing and safe-area inset handling across all mobile route groups.
 - [x] Add consistent content spacing below the system status bar without reintroducing visible safe-area background bands.
 - [x] Validate mobile spacing refinement with tests and production export, then commit and push.
+
+## Overlay-Free Mobile Sheets and Pop-ups
+
+- [x] Audit reusable and route-local mobile sheets, modals, and pop-ups for dimmed background overlays.
+- [x] Remove darkened overlays while retaining safe dismissal behavior and polished reporter-style sheet presentation.
+- [x] Validate sheets and pop-ups with mobile tests and production export, then commit and push the refinement.

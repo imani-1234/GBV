@@ -63,7 +63,7 @@ export default function AdminLayout() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FEFDFE" },
-  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(34,18,42,0.34)" },
+  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "transparent" },
   sheet: { maxHeight: "82%", borderTopLeftRadius: 31, borderTopRightRadius: 31, backgroundColor: "#FEFDFE", paddingHorizontal: 22, paddingTop: 10 },
   sheetHandle: { alignSelf: "center", width: 42, height: 4, borderRadius: 4, backgroundColor: "#D4C8DA", marginBottom: 18 },
   sheetHead: { flexDirection: "row", alignItems: "flex-start", gap: 13, marginBottom: 19 },

@@ -109,7 +109,7 @@ function TransitionModal({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 24 }} onPress={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 24 }} onPress={onClose}>
         <Pressable style={{ backgroundColor: scheme.surface, borderRadius: br.xl, padding: spacing.lg, maxHeight: "80%" }} onPress={() => {}}>
           <Text style={[typography.title.medium, { color: scheme.onSurface, marginBottom: spacing.md }]}>Update Status</Text>
           <ScrollView style={{ maxHeight: 300 }}>
@@ -178,7 +178,7 @@ function AssignOfficerModal({
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }} onPress={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "flex-end" }} onPress={onClose}>
         <Pressable
           style={{ backgroundColor: scheme.surface, borderTopLeftRadius: br.xl, borderTopRightRadius: br.xl, padding: spacing.lg, maxHeight: "80%", minHeight: 300 }}
           onPress={() => {}}
@@ -249,7 +249,7 @@ function PriorityModal({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", padding: 24 }} onPress={onClose}>
+      <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "center", padding: 24 }} onPress={onClose}>
         <Pressable style={{ backgroundColor: scheme.surface, borderRadius: br.xl, padding: spacing.lg }} onPress={() => {}}>
           <Text style={[typography.title.medium, { color: scheme.onSurface, marginBottom: spacing.md }]}>Change Priority</Text>
           {PRIORITIES.map((p) => {
@@ -506,7 +506,7 @@ export default function CaseOversightScreen() {
 
       {selectedId && (
         <Modal transparent animationType="slide" onRequestClose={() => setSelectedId(null)} statusBarTranslucent>
-          <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }} onPress={() => setSelectedId(null)}>
+          <Pressable style={{ flex: 1, backgroundColor: "transparent", justifyContent: "flex-end" }} onPress={() => setSelectedId(null)}>
             <Pressable
               style={{ backgroundColor: scheme.background, borderTopLeftRadius: br.xl, borderTopRightRadius: br.xl, maxHeight: "92%", paddingBottom: insets.bottom + spacing.md }}
               onPress={() => {}}
