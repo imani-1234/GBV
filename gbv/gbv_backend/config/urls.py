@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
 
-from apps.reports.views import PublicCategoryViewSet
+from apps.reports.views import PublicCampusViewSet, PublicCategoryViewSet, PublicDepartmentViewSet
 
 
 @api_view(["GET"])
@@ -21,6 +21,10 @@ def health_check(request):
 
 category_router = DefaultRouter()
 category_router.register("", PublicCategoryViewSet, basename="category")
+
+location_router = DefaultRouter()
+location_router.register("campuses", PublicCampusViewSet, basename="campus")
+location_router.register("departments", PublicDepartmentViewSet, basename="department")
 
 
 urlpatterns = [
@@ -49,6 +53,8 @@ urlpatterns = [
     # Incident categories: readable by any authenticated user (frontend wizard),
     # writable only by admins via the shared viewset.
     path("api/v1/categories/", include(category_router.urls)),
+    # Configured reporting locations: reporters may read active options only.
+    path("api/v1/locations/", include(location_router.urls)),
     # Admin management
     path("api/v1/admin/", include("config.admin_urls")),
 ]

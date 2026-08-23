@@ -1,8 +1,26 @@
 import apiClient from "./client";
-import type { IncidentCategory, Report, PaginatedResponse } from "../types";
+import type { IncidentCategory, PaginatedResponse, Report, SuspectDetails, SuspectType, VictimGender } from "../types";
 
-type ReportCreatePayload = Omit<Partial<Report>, "category"> & {
-  category?: string | IncidentCategory;
+export type ReportCreatePayload = {
+  category: string | IncidentCategory;
+  campus_option: string;
+  department_option: string;
+  location_text?: string;
+  incident_date: string;
+  description: string;
+  victim_is_reporter?: boolean;
+  victim_details?: { name?: string; contact?: string };
+  victim_gender?: VictimGender | "";
+  offender_known?: boolean;
+  offender_details?: { name?: string; relationship?: string };
+  suspect_type?: SuspectType | "";
+  suspect_campus?: string | null;
+  suspect_department?: string | null;
+  suspect_details?: SuspectDetails;
+  witnesses?: { name?: string; contact?: string }[];
+  needs_immediate_help?: boolean;
+  consent_to_contact?: boolean;
+  priority?: "low" | "medium" | "high" | "critical";
 };
 
 export const reportsApi = {

@@ -11,8 +11,10 @@ from rest_framework.response import Response
 from apps.cases.models import Case
 from apps.core.permissions import AuditLogMixin, CanAccessReport, IsAdminUser, _audit_log
 from apps.core.utils import MAX_FILE_SIZE, validate_file_type
-from apps.reports.models import Evidence, IncidentCategory, Report
+from apps.reports.models import Campus, Department, Evidence, IncidentCategory, Report
 from apps.reports.serializers import (
+    CampusSerializer,
+    DepartmentSerializer,
     EvidenceSerializer,
     IncidentCategorySerializer,
     ReportCreateSerializer,
@@ -241,6 +243,32 @@ class PublicCategoryViewSet(viewsets.ModelViewSet):
         return [IsAdminUser()]
 
 
+@extend_schema(tags=["reports"])
+class PublicCampusViewSet(viewsets.ReadOnlyModelViewSet):
+    """Active reporting locations available to authenticated reporter sessions."""
+
+    queryset = Campus.objects.filter(is_active=True).order_by("name")
+    serializer_class = CampusSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+
+@extend_schema(tags=["reports"])
+class PublicDepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Active reporting departments, optionally filtered by ?campus=<uuid>."""
+
+    serializer_class = DepartmentSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = Department.objects.select_related("campus").filter(is_active=True, campus__is_active=True)
+        campus_id = self.request.query_params.get("campus")
+        if campus_id:
+            queryset = queryset.filter(campus_id=campus_id)
+        return queryset.order_by("campus__name", "name")
+
+
 @extend_schema(tags=["admin"])
 class CategoryViewSet(AuditLogMixin, viewsets.ModelViewSet):
     queryset = IncidentCategory.objects.all().order_by("name")
@@ -270,3 +298,19 @@ class CategoryViewSet(AuditLogMixin, viewsets.ModelViewSet):
     @extend_schema(summary="Delete a category")
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+
+@extend_schema(tags=["admin"])
+class CampusViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    queryset = Campus.objects.all().order_by("name")
+    serializer_class = CampusSerializer
+    permission_classes = [IsAdminUser]
+    resource_type = "campus"
+
+
+@extend_schema(tags=["admin"])
+class DepartmentViewSet(AuditLogMixin, viewsets.ModelViewSet):
+    queryset = Department.objects.select_related("campus").all().order_by("campus__name", "name")
+    serializer_class = DepartmentSerializer
+    permission_classes = [IsAdminUser]
+    resource_type = "department"

@@ -12,7 +12,8 @@ import { useTheme } from "../../../src/theme/ThemeProvider";
 import { Button, TextField, Card, Chip, Divider, Stepper, AnimatedStepContent } from "../../../src/components/ui";
 import { reportsApi } from "../../../src/api/reports";
 import { categoriesApi } from "../../../src/api/categories";
-import type { IncidentCategory } from "../../../src/types";
+import { locationsApi } from "../../../src/api/locations";
+import type { Campus, Department, IncidentCategory, SuspectType, VictimGender } from "../../../src/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
@@ -39,24 +40,33 @@ const STEPS = [
   { label: "Location" },
   { label: "Details" },
   { label: "Victim" },
-  { label: "Offender" },
+  { label: "Suspect" },
+  { label: "Witnesses" },
   { label: "Evidence" },
   { label: "Review" },
 ];
 
+type SelectMenu = "campus" | "department" | "gender" | "suspectType" | "suspectCampus" | "suspectDepartment" | null;
+
 interface WizardData {
   categoryId: string;
-  campus: string;
-  department: string;
+  campusId: string;
+  departmentId: string;
   locationText: string;
   incidentDate: Date;
   description: string;
   isVictimSelf: boolean;
   victimName: string;
   victimContact: string;
-  offenderKnown: boolean;
-  offenderName: string;
-  offenderRelationship: string;
+  victimGender: VictimGender | "";
+  suspectKnown: boolean;
+  suspectType: SuspectType | "";
+  suspectName: string;
+  suspectIdentifier: string;
+  suspectRelationship: string;
+  suspectCampusId: string;
+  suspectDepartmentId: string;
+  suspectNotes: string;
   witnesses: { name: string; contact: string }[];
   evidence: { uri: string; name: string; type: string; size: number }[];
   consentToContact: boolean;
@@ -64,12 +74,22 @@ interface WizardData {
 }
 
 const initialData: WizardData = {
-  categoryId: "", campus: "", department: "", locationText: "",
+  categoryId: "", campusId: "", departmentId: "", locationText: "",
   incidentDate: new Date(), description: "", isVictimSelf: true,
-  victimName: "", victimContact: "", offenderKnown: false,
-  offenderName: "", offenderRelationship: "", witnesses: [],
+  victimName: "", victimContact: "", victimGender: "", suspectKnown: false,
+  suspectType: "", suspectName: "", suspectIdentifier: "", suspectRelationship: "",
+  suspectCampusId: "", suspectDepartmentId: "", suspectNotes: "", witnesses: [],
   evidence: [], consentToContact: false, needsImmediateHelp: false,
 };
+
+function SelectField({ label, value, placeholder, onPress, disabled = false }: { label: string; value?: string; placeholder: string; onPress: () => void; disabled?: boolean }) {
+  return <View style={styles.selectField}><Text style={styles.selectLabel}>{label}</Text><Pressable disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.selectControl, disabled && styles.selectDisabled, pressed && !disabled && styles.selectPressed]}><Text numberOfLines={1} style={[styles.selectValue, !value && styles.selectPlaceholder]}>{value || placeholder}</Text><Ionicons name="chevron-down" size={19} color={disabled ? "#A9A1AB" : "#7E36B7"} /></Pressable></View>;
+}
+
+function SelectionList({ options, selectedId, onSelect, emptyText }: { options: { id: string; label: string; detail?: string }[]; selectedId: string; onSelect: (id: string) => void; emptyText: string }) {
+  if (!options.length) return <View style={styles.selectEmpty}><Text style={styles.selectEmptyText}>{emptyText}</Text></View>;
+  return <View style={styles.selectMenu}>{options.map((option) => <Pressable key={option.id} onPress={() => onSelect(option.id)} style={({ pressed }) => [styles.selectOption, selectedId === option.id && styles.selectOptionActive, pressed && styles.selectPressed]}><View style={{ flex: 1 }}><Text style={[styles.selectOptionText, selectedId === option.id && styles.selectOptionTextActive]}>{option.label}</Text>{option.detail ? <Text style={styles.selectOptionDetail}>{option.detail}</Text> : null}</View>{selectedId === option.id ? <Ionicons name="checkmark" size={19} color="#813BBC" /> : null}</Pressable>)}</View>;
+}
 
 
 export default function ReportWizard() {
@@ -87,12 +107,17 @@ export default function ReportWizard() {
   const [mediaError, setMediaError] = useState<MediaErrorMessage | null>(null);
   const [draftReport, setDraftReport] = useState<{ id: string; caseNumber?: string | null } | null>(null);
   const [uploadedEvidenceUris, setUploadedEvidenceUris] = useState<string[]>([]);
+  const [openSelect, setOpenSelect] = useState<SelectMenu>(null);
 
   // Incident categories are server-authoritative: the option cards must use
   // the real backend UUIDs (the API rejects fake slug ids with a 400).
   const [categories, setCategories] = useState<IncidentCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const categoryOptions = Array.isArray(categories) ? categories : [];
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [suspectDepartments, setSuspectDepartments] = useState<Department[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
@@ -107,12 +132,43 @@ export default function ReportWizard() {
     setData((prev) => ({ ...prev, [key]: value }));
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    locationsApi.campuses()
+      .then((items) => { if (mounted) setCampuses(items); })
+      .catch(() => { if (mounted) setCampuses([]); })
+      .finally(() => { if (mounted) setLocationsLoading(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!data.campusId) { setDepartments([]); return () => { mounted = false; }; }
+    locationsApi.departments(data.campusId)
+      .then((items) => { if (mounted) setDepartments(items); })
+      .catch(() => { if (mounted) setDepartments([]); });
+    return () => { mounted = false; };
+  }, [data.campusId]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!data.suspectCampusId) { setSuspectDepartments([]); return () => { mounted = false; }; }
+    locationsApi.departments(data.suspectCampusId)
+      .then((items) => { if (mounted) setSuspectDepartments(items); })
+      .catch(() => { if (mounted) setSuspectDepartments([]); });
+    return () => { mounted = false; };
+  }, [data.suspectCampusId]);
+
   const validateStep = (): string | null => {
     switch (step) {
       case 0: return data.categoryId ? null : "Please select an incident type";
-      case 1: return data.campus ? null : "Please enter your campus";
+      case 1:
+        if (!data.campusId) return "Please select your campus";
+        return data.departmentId ? null : "Please select your department";
       case 2: return data.description.length >= 20 ? null : "Description must be at least 20 characters";
-      case 3: return data.isVictimSelf || data.victimName ? null : "Please provide victim details";
+      case 3:
+        if (!data.victimGender) return "Please select a gender option";
+        return data.isVictimSelf || data.victimName ? null : "Please provide victim details";
       default: return null;
     }
   };
@@ -128,11 +184,28 @@ export default function ReportWizard() {
 
   const buildReportPayload = () => ({
     category: data.categoryId,
-    campus: data.campus,
-    department: data.department,
+    campus_option: data.campusId,
+    department_option: data.departmentId,
     location_text: data.locationText,
     incident_date: toDateInput(data.incidentDate),
     description: data.description,
+    victim_is_reporter: data.isVictimSelf,
+    victim_details: data.isVictimSelf ? {} : { name: data.victimName, contact: data.victimContact },
+    victim_gender: data.victimGender,
+    offender_known: data.suspectKnown,
+    offender_details: data.suspectKnown ? { name: data.suspectName, relationship: data.suspectRelationship } : {},
+    suspect_type: data.suspectKnown ? data.suspectType : "",
+    suspect_campus: data.suspectKnown && data.suspectCampusId ? data.suspectCampusId : null,
+    suspect_department: data.suspectKnown && data.suspectDepartmentId ? data.suspectDepartmentId : null,
+    suspect_details: data.suspectKnown ? {
+      name: data.suspectName,
+      identifier: data.suspectIdentifier,
+      relationship: data.suspectRelationship,
+      notes: data.suspectNotes,
+    } : {},
+    witnesses: data.witnesses.filter((w) => w.name.trim() || w.contact.trim()),
+    needs_immediate_help: data.needsImmediateHelp,
+    consent_to_contact: data.consentToContact,
   });
 
   const handleSaveDraft = async () => {
@@ -178,7 +251,7 @@ export default function ReportWizard() {
             message: `${file.name}: ${uploadError.message}`,
           });
           setUploadProgress({});
-          setStep(5);
+          setStep(6);
           return;
         }
       }
@@ -334,9 +407,13 @@ export default function ReportWizard() {
       case 1: return (
         <View>
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Location & Date</Text>
-          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Where and when did this happen?</Text>
-          <TextField label="Campus" value={data.campus} onChangeText={(v) => update("campus", v)} containerStyle={{ marginBottom: spacing.sm }} />
-          <TextField label="Department / Faculty (optional)" value={data.department} onChangeText={(v) => update("department", v)} containerStyle={{ marginBottom: spacing.sm }} />
+          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Choose the campus and department where this happened. These options are managed by the safeguarding office.</Text>
+          {locationsLoading ? <ActivityIndicator size="small" color={scheme.primary} style={{ marginVertical: spacing.md }} /> : campuses.length === 0 ? <View style={[styles.alertCard, { backgroundColor: scheme.warningContainer, borderRadius: borderRadius.md }]}><Ionicons name="information-circle" size={20} color={scheme.onWarning} /><Text style={[typography.body.small, { color: scheme.onWarning, marginLeft: 8, flex: 1 }]}>Locations are not available yet. Please contact the safeguarding office for support.</Text></View> : <>
+            <SelectField label="Campus" value={campuses.find((item) => item.id === data.campusId)?.name} placeholder="Select campus" onPress={() => setOpenSelect(openSelect === "campus" ? null : "campus")} />
+            {openSelect === "campus" ? <SelectionList options={campuses.map((item) => ({ id: item.id, label: item.name, detail: item.code || undefined }))} selectedId={data.campusId} onSelect={(id) => { update("campusId", id); update("departmentId", ""); setOpenSelect(null); }} emptyText="No campuses are configured." /> : null}
+            <SelectField label="Department / Faculty" value={departments.find((item) => item.id === data.departmentId)?.name} placeholder={data.campusId ? "Select department" : "Select campus first"} disabled={!data.campusId} onPress={() => setOpenSelect(openSelect === "department" ? null : "department")} />
+            {openSelect === "department" ? <SelectionList options={departments.map((item) => ({ id: item.id, label: item.name, detail: item.code || undefined }))} selectedId={data.departmentId} onSelect={(id) => { update("departmentId", id); setOpenSelect(null); }} emptyText="No departments are configured for this campus." /> : null}
+          </>}
           <TextField label="Specific location (optional)" value={data.locationText} onChangeText={(v) => update("locationText", v)} containerStyle={{ marginBottom: spacing.sm }} />
           <Pressable onPress={() => setShowDatePicker(true)} style={[styles.dateButton, { borderColor: scheme.outline, borderRadius: borderRadius.md }]}>
             <Ionicons name="calendar-outline" size={20} color={scheme.onSurfaceVariant} />
@@ -388,7 +465,9 @@ export default function ReportWizard() {
       case 3: return (
         <View>
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Victim Information</Text>
-          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Are you reporting on your own behalf or someone else's?</Text>
+          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Are you reporting on your own behalf or someone else's? Gender is collected only to help the safeguarding team understand patterns of harm.</Text>
+          <SelectField label="Gender" value={({ female: "Girl / woman", male: "Boy / man", non_binary: "Non-binary / another identity", self_describe: "Self-describe", prefer_not_to_say: "Prefer not to say" } as Record<string, string>)[data.victimGender]} placeholder="Select an option" onPress={() => setOpenSelect(openSelect === "gender" ? null : "gender")} />
+          {openSelect === "gender" ? <SelectionList options={[{ id: "female", label: "Girl / woman" }, { id: "male", label: "Boy / man" }, { id: "non_binary", label: "Non-binary / another identity" }, { id: "self_describe", label: "Self-describe" }, { id: "prefer_not_to_say", label: "Prefer not to say" }]} selectedId={data.victimGender} onSelect={(id) => { update("victimGender", id as VictimGender); setOpenSelect(null); }} emptyText="No options available." /> : null}
           <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.lg }}>
             <Pressable onPress={() => { update("isVictimSelf", true); update("victimName", ""); }} style={[styles.toggleBtn, { flex: 1, borderRadius: borderRadius.md, borderColor: data.isVictimSelf ? scheme.primary : scheme.outline, borderWidth: data.isVictimSelf ? 2 : 1, backgroundColor: data.isVictimSelf ? scheme.primaryContainer : scheme.surface }]}>
               <Ionicons name="person" size={20} color={data.isVictimSelf ? scheme.primary : scheme.onSurfaceVariant} />
@@ -410,23 +489,37 @@ export default function ReportWizard() {
 
       case 4: return (
         <View>
-          <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Offender & Witnesses</Text>
-          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Do you know who may have been responsible? Only share what you are comfortable with.</Text>
+          <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Suspect Details</Text>
+          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>This step is optional. Share only details you know and feel safe providing.</Text>
           <View style={{ flexDirection: "row", gap: 8, marginBottom: spacing.lg }}>
-            <Pressable onPress={() => update("offenderKnown", true)} style={[styles.toggleBtn, { flex: 1, borderRadius: borderRadius.md, borderColor: data.offenderKnown ? scheme.primary : scheme.outline, borderWidth: data.offenderKnown ? 2 : 1, backgroundColor: data.offenderKnown ? scheme.primaryContainer : scheme.surface }]}>
-              <Text style={[typography.label.large, { color: data.offenderKnown ? scheme.onPrimaryContainer : scheme.onSurfaceVariant }]}>Known</Text>
+            <Pressable onPress={() => update("suspectKnown", true)} style={[styles.toggleBtn, { flex: 1, borderRadius: borderRadius.md, borderColor: data.suspectKnown ? scheme.primary : scheme.outline, borderWidth: data.suspectKnown ? 2 : 1, backgroundColor: data.suspectKnown ? scheme.primaryContainer : scheme.surface }]}>
+              <Text style={[typography.label.large, { color: data.suspectKnown ? scheme.onPrimaryContainer : scheme.onSurfaceVariant }]}>Add details</Text>
             </Pressable>
-            <Pressable onPress={() => update("offenderKnown", false)} style={[styles.toggleBtn, { flex: 1, borderRadius: borderRadius.md, borderColor: !data.offenderKnown ? scheme.primary : scheme.outline, borderWidth: !data.offenderKnown ? 2 : 1, backgroundColor: !data.offenderKnown ? scheme.primaryContainer : scheme.surface }]}>
-              <Text style={[typography.label.large, { color: !data.offenderKnown ? scheme.onPrimaryContainer : scheme.onSurfaceVariant }]}>Unknown</Text>
+            <Pressable onPress={() => update("suspectKnown", false)} style={[styles.toggleBtn, { flex: 1, borderRadius: borderRadius.md, borderColor: !data.suspectKnown ? scheme.primary : scheme.outline, borderWidth: !data.suspectKnown ? 2 : 1, backgroundColor: !data.suspectKnown ? scheme.primaryContainer : scheme.surface }]}>
+              <Text style={[typography.label.large, { color: !data.suspectKnown ? scheme.onPrimaryContainer : scheme.onSurfaceVariant }]}>Skip for now</Text>
             </Pressable>
           </View>
-          {data.offenderKnown && (
+          {data.suspectKnown && (
             <>
-              <TextField label="Name (if known)" value={data.offenderName} onChangeText={(v) => update("offenderName", v)} containerStyle={{ marginBottom: spacing.sm }} />
-              <TextField label="Relationship (if applicable)" value={data.offenderRelationship} onChangeText={(v) => update("offenderRelationship", v)} containerStyle={{ marginBottom: spacing.sm }} />
+              <SelectField label="Suspect type" value={({ student: "Student", lecturer: "Lecturer", staff: "Staff member", visitor: "Visitor", other: "Other / not sure" } as Record<string, string>)[data.suspectType]} placeholder="Select if known" onPress={() => setOpenSelect(openSelect === "suspectType" ? null : "suspectType")} />
+              {openSelect === "suspectType" ? <SelectionList options={[{ id: "student", label: "Student" }, { id: "lecturer", label: "Lecturer" }, { id: "staff", label: "Staff member" }, { id: "visitor", label: "Visitor" }, { id: "other", label: "Other / not sure" }]} selectedId={data.suspectType} onSelect={(id) => { update("suspectType", id as SuspectType); setOpenSelect(null); }} emptyText="No options available." /> : null}
+              <TextField label="Name (if known)" value={data.suspectName} onChangeText={(v) => update("suspectName", v)} containerStyle={{ marginBottom: spacing.sm }} />
+              <TextField label="Student / staff ID (if known)" value={data.suspectIdentifier} onChangeText={(v) => update("suspectIdentifier", v)} containerStyle={{ marginBottom: spacing.sm }} />
+              <TextField label="Connection to the incident (optional)" value={data.suspectRelationship} onChangeText={(v) => update("suspectRelationship", v)} containerStyle={{ marginBottom: spacing.sm }} />
+              <SelectField label="Suspect campus (optional)" value={campuses.find((item) => item.id === data.suspectCampusId)?.name} placeholder="Select if known" onPress={() => setOpenSelect(openSelect === "suspectCampus" ? null : "suspectCampus")} />
+              {openSelect === "suspectCampus" ? <SelectionList options={campuses.map((item) => ({ id: item.id, label: item.name, detail: item.code || undefined }))} selectedId={data.suspectCampusId} onSelect={(id) => { update("suspectCampusId", id); update("suspectDepartmentId", ""); setOpenSelect(null); }} emptyText="No campuses are configured." /> : null}
+              <SelectField label="Suspect department (optional)" value={suspectDepartments.find((item) => item.id === data.suspectDepartmentId)?.name} placeholder={data.suspectCampusId ? "Select if known" : "Select campus first"} disabled={!data.suspectCampusId} onPress={() => setOpenSelect(openSelect === "suspectDepartment" ? null : "suspectDepartment")} />
+              {openSelect === "suspectDepartment" ? <SelectionList options={suspectDepartments.map((item) => ({ id: item.id, label: item.name, detail: item.code || undefined }))} selectedId={data.suspectDepartmentId} onSelect={(id) => { update("suspectDepartmentId", id); setOpenSelect(null); }} emptyText="No departments are configured for this campus." /> : null}
+              <TextField label="Anything else that may help identify them (optional)" value={data.suspectNotes} onChangeText={(v) => update("suspectNotes", v)} containerStyle={{ marginBottom: spacing.sm }} />
             </>
           )}
-          <Divider />
+        </View>
+      );
+
+      case 5: return (
+        <View>
+          <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Witnesses</Text>
+          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Add a witness only if they have agreed to be contacted or you believe it is safe to share their details.</Text>
           <Text style={[typography.title.small, { color: scheme.onBackground, marginBottom: spacing.sm }]}>Witnesses</Text>
           {data.witnesses.map((w, i) => (
             <View key={i} style={[styles.witnessRow, { borderRadius: borderRadius.md, borderColor: scheme.outlineVariant }]}>
@@ -446,7 +539,7 @@ export default function ReportWizard() {
         </View>
       );
 
-      case 5: return (
+      case 6: return (
         <View>
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.xs }]}>Evidence</Text>
           <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginBottom: spacing.md }]}>Upload any evidence you have — photos, screenshots, documents, or recordings. You can also skip this and add evidence later.</Text>
@@ -528,7 +621,7 @@ export default function ReportWizard() {
         </View>
       );
 
-      case 6: return (
+      case 7: return (
         <View>
           <Text style={[typography.title.medium, { color: scheme.onBackground, marginBottom: spacing.lg }]}>Review & Submit</Text>
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
@@ -537,7 +630,7 @@ export default function ReportWizard() {
           </Card>
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
             <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Location & Date</Text>
-            <Text style={[typography.body.large, { color: scheme.onSurface }]}>{data.campus}{data.department ? `, ${data.department}` : ""}</Text>
+            <Text style={[typography.body.large, { color: scheme.onSurface }]}>{campuses.find((item) => item.id === data.campusId)?.name || "Not selected"}{data.departmentId ? `, ${departments.find((item) => item.id === data.departmentId)?.name || ""}` : ""}</Text>
             <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>{data.incidentDate.toLocaleDateString()}</Text>
           </Card>
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
@@ -547,11 +640,13 @@ export default function ReportWizard() {
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
             <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Victim</Text>
             <Text style={[typography.body.large, { color: scheme.onSurface }]}>{data.isVictimSelf ? "Self" : data.victimName}</Text>
+            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>{({ female: "Girl / woman", male: "Boy / man", non_binary: "Non-binary / another identity", self_describe: "Self-describe", prefer_not_to_say: "Prefer not to say" } as Record<string, string>)[data.victimGender] || "Not shared"}</Text>
           </Card>
-          {data.offenderKnown && (
+          {data.suspectKnown && (
             <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
-              <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Offender</Text>
-              <Text style={[typography.body.large, { color: scheme.onSurface }]}>{data.offenderName || "Known (name withheld)"}</Text>
+              <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Suspect details</Text>
+              <Text style={[typography.body.large, { color: scheme.onSurface }]}>{data.suspectName || "Details shared without a name"}</Text>
+              <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>{({ student: "Student", lecturer: "Lecturer", staff: "Staff member", visitor: "Visitor", other: "Other / not sure" } as Record<string, string>)[data.suspectType] || "Type not shared"}</Text>
             </Card>
           )}
           <Card variant="filled" padding="md" style={{ marginBottom: spacing.sm }}>
@@ -654,6 +749,21 @@ const styles = StyleSheet.create({
   progressTrack: { height: 4, borderRadius: 2, backgroundColor: "#E9DFEE", overflow: "hidden", marginTop: 8 },
   progressFill: { height: "100%", borderRadius: 2, backgroundColor: "#A95BEA" },
   scrollContent: { paddingHorizontal: 36, paddingTop: 8, paddingBottom: 36 },
+  selectField: { marginBottom: 11 },
+  selectLabel: { color: "#413A45", fontSize: 12.5, fontWeight: "800", marginLeft: 4, marginBottom: 7 },
+  selectControl: { minHeight: 57, flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1.25, borderColor: "#B7AFBA", borderRadius: 28.5, backgroundColor: "rgba(255,255,255,0.76)", paddingHorizontal: 19 },
+  selectValue: { flex: 1, color: "#272128", fontSize: 15 },
+  selectPlaceholder: { color: "#87808A" },
+  selectDisabled: { opacity: 0.62, backgroundColor: "#F7F3F8" },
+  selectPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  selectMenu: { marginTop: -5, marginBottom: 12, borderWidth: 1, borderColor: "#DDD2E2", borderRadius: 21, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  selectOption: { minHeight: 55, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#F0EAF2" },
+  selectOptionActive: { backgroundColor: "#F1E2FD" },
+  selectOptionText: { color: "#332C36", fontSize: 14.5, fontWeight: "700" },
+  selectOptionTextActive: { color: "#7132AA" },
+  selectOptionDetail: { color: "#837B86", fontSize: 10.5, marginTop: 2 },
+  selectEmpty: { marginTop: -5, marginBottom: 12, borderRadius: 18, backgroundColor: "#F7F3F8", padding: 14 },
+  selectEmptyText: { color: "#766E78", fontSize: 12 },
   optionCard: { padding: 16, marginBottom: 8, borderWidth: 1 },
   dateButton: { flexDirection: "row", alignItems: "center", padding: 16, borderWidth: 1.5, marginTop: 8 },
   textArea: { borderWidth: 1.5 },

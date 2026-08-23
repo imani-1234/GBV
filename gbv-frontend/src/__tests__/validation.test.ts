@@ -69,10 +69,15 @@ describe("submitReportSchema", () => {
     const result = submitReportSchema.safeParse({
       category_id: "cat-1",
       incident_date: "2025-01-15",
-      campus: "Main Campus",
-      department: "Safety",
+      campus_option: "campus-1",
+      department_option: "department-1",
       location_text: "Building A, Room 203",
       description: "This is a detailed description of the incident that meets the minimum length requirement.",
+      victim_gender: "female",
+      suspect_type: "staff",
+      suspect_campus: "campus-1",
+      suspect_department: "department-1",
+      suspect_details: { name: "Known staff member", identifier: "STF-44" },
     });
     expect(result.success).toBe(true);
   });
@@ -81,9 +86,8 @@ describe("submitReportSchema", () => {
     const result = submitReportSchema.safeParse({
       category_id: "",
       incident_date: "",
-      campus: "",
-      department: "",
-      location_text: "",
+      campus_option: "",
+      department_option: "",
       description: "",
     });
     expect(result.success).toBe(false);
@@ -93,10 +97,10 @@ describe("submitReportSchema", () => {
     const result = submitReportSchema.safeParse({
       category_id: "cat-1",
       incident_date: "2025-01-15",
-      campus: "Main Campus",
-      department: "Safety",
-      location_text: "Building A",
+      campus_option: "campus-1",
+      department_option: "department-1",
       description: "Too short",
+      victim_gender: "male",
     });
     expect(result.success).toBe(false);
   });

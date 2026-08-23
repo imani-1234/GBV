@@ -89,3 +89,11 @@
 - [x] Audit reusable and route-local mobile sheets, modals, and pop-ups for dimmed background overlays.
 - [x] Remove darkened overlays while retaining safe dismissal behavior and polished reporter-style sheet presentation.
 - [x] Validate sheets and pop-ups with mobile tests and production export, then commit and push the refinement.
+
+## Professional Reporting Metadata and Suspect Details
+
+- [x] Audit the existing report model, API contracts, admin configuration, and mobile report wizard phases.
+- [x] Add administrator-managed campus and department configuration with protected reporter-facing selection APIs.
+- [x] Add privacy-conscious optional reporter gender and structured optional suspect details to report data and validation.
+- [x] Update the mobile report wizard to use configured location selections and a simple optional suspect-details step.
+- [x] Add backend and mobile regression tests, run migrations and production checks, then commit and push the end-to-end enhancement.

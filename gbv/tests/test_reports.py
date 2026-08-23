@@ -9,7 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.accounts.models import AnonymousReporter
-from apps.reports.models import Evidence, IncidentCategory, Report
+from apps.reports.models import Campus, Department, Evidence, IncidentCategory, Report
 
 User = get_user_model()
 
@@ -40,6 +40,16 @@ def category_low():
 
 
 @pytest.fixture
+def campus():
+    return Campus.objects.create(name="Main Campus", code="MAIN")
+
+
+@pytest.fixture
+def department(campus):
+    return Department.objects.create(campus=campus, name="Engineering", code="ENG")
+
+
+@pytest.fixture
 def reporter():
     return User.objects.create_user(
         email="reporter@test.com",
@@ -58,12 +68,12 @@ def anon_reporter():
 
 
 @pytest.fixture
-def report_payload(category):
+def report_payload(category, campus, department):
     return {
         "category": str(category.id),
         "incident_date": "2026-07-22",
-        "campus": "Main Campus",
-        "department": "Engineering",
+        "campus_option": str(campus.id),
+        "department_option": str(department.id),
         "location_text": "Building A, Room 101",
         "description": "A test incident report",
     }
@@ -178,20 +188,25 @@ class TestDraftCreation:
         assert resp.data["reporter_info"]["reporter_code"] == "TEST99"
 
     def test_create_draft_with_all_optional_fields(
-        self, api_client, reporter, category
+        self, api_client, reporter, category, campus, department
     ):
         authenticate(api_client, reporter)
         payload = {
             "category": str(category.id),
             "incident_date": "2026-07-22",
-            "campus": "Main Campus",
-            "department": "Engineering",
+            "campus_option": str(campus.id),
+            "department_option": str(department.id),
             "location_text": "Building A, Room 101",
             "description": "Full report",
             "victim_is_reporter": True,
-            "victim_details": {"age": 25, "gender": "female"},
+            "victim_gender": "female",
+            "victim_details": {"age": 25},
             "offender_known": True,
             "offender_details": {"name": "John Doe", "relationship": "colleague"},
+            "suspect_type": "staff",
+            "suspect_campus": str(campus.id),
+            "suspect_department": str(department.id),
+            "suspect_details": {"name": "John Doe", "identifier": "STF-24"},
             "witnesses": [{"name": "Jane Witness"}],
             "needs_immediate_help": False,
             "consent_to_contact": True,
@@ -200,8 +215,47 @@ class TestDraftCreation:
         resp = api_client.post(REPORTS_URL, payload, format="json")
         assert resp.status_code == status.HTTP_201_CREATED
         assert resp.data["victim_is_reporter"] is True
+        assert resp.data["victim_gender"] == "female"
         assert resp.data["offender_known"] is True
+        assert resp.data["suspect_type"] == "staff"
         assert resp.data["priority"] == "high"
+
+    def test_create_draft_rejects_department_from_another_campus(
+        self, api_client, reporter, category, campus, department
+    ):
+        other_campus = Campus.objects.create(name="North Campus", code="NORTH")
+        other_department = Department.objects.create(campus=other_campus, name="Health Sciences", code="HEALTH")
+        authenticate(api_client, reporter)
+        resp = api_client.post(
+            REPORTS_URL,
+            {
+                "category": str(category.id),
+                "incident_date": "2026-07-22",
+                "campus_option": str(campus.id),
+                "department_option": str(other_department.id),
+                "location_text": "Building A, Room 101",
+                "description": "The selected department belongs to a different campus.",
+            },
+            format="json",
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert "department_option" in resp.data
+
+
+@pytest.mark.django_db
+class TestConfiguredLocationOptions:
+    def test_reporter_reads_only_active_location_options(self, api_client, reporter, campus, department):
+        Campus.objects.create(name="Inactive Campus", code="OLD", is_active=False)
+        Department.objects.create(campus=campus, name="Inactive Department", code="OLD-ENG", is_active=False)
+        authenticate(api_client, reporter)
+
+        campuses = api_client.get("/api/v1/locations/campuses/")
+        departments = api_client.get(f"/api/v1/locations/departments/?campus={campus.id}")
+
+        assert campuses.status_code == status.HTTP_200_OK
+        assert [item["id"] for item in campuses.data] == [str(campus.id)]
+        assert departments.status_code == status.HTTP_200_OK
+        assert [item["id"] for item in departments.data] == [str(department.id)]
 
 
 # ── Edit Lock ──────────────────────────────────────────────────────
@@ -209,15 +263,15 @@ class TestDraftCreation:
 
 @pytest.mark.django_db
 class TestEditLock:
-    def test_update_draft_success(self, api_client, reporter, category):
+    def test_update_draft_success(self, api_client, reporter, category, campus, department):
         authenticate(api_client, reporter)
         create_resp = api_client.post(
             REPORTS_URL,
             {
                 "category": str(category.id),
                 "incident_date": "2026-07-22",
-                "campus": "Main Campus",
-                "department": "Engineering",
+                "campus_option": str(campus.id),
+                "department_option": str(department.id),
                 "location_text": "Building A, Room 101",
                 "description": "Original description",
             },
@@ -233,7 +287,7 @@ class TestEditLock:
         assert update_resp.data["description"] == "Updated description"
 
     def test_cannot_update_submitted_report(
-        self, api_client, reporter, category
+        self, api_client, reporter, category, campus, department
     ):
         authenticate(api_client, reporter)
         create_resp = api_client.post(
@@ -241,8 +295,8 @@ class TestEditLock:
             {
                 "category": str(category.id),
                 "incident_date": "2026-07-22",
-                "campus": "Main Campus",
-                "department": "Engineering",
+                "campus_option": str(campus.id),
+                "department_option": str(department.id),
                 "location_text": "Building A, Room 101",
                 "description": "Test report",
             },
@@ -289,7 +343,7 @@ class TestSubmit:
         assert resp.data["case_number"] == first.data["case_number"]
 
     def test_submit_auto_suggests_priority(
-        self, api_client, reporter, category
+        self, api_client, reporter, category, campus, department
     ):
         authenticate(api_client, reporter)
         create_resp = api_client.post(
@@ -297,8 +351,8 @@ class TestSubmit:
             {
                 "category": str(category.id),
                 "incident_date": "2026-07-22",
-                "campus": "Main Campus",
-                "department": "Engineering",
+                "campus_option": str(campus.id),
+                "department_option": str(department.id),
                 "location_text": "Building A, Room 101",
                 "description": "Priority test",
             },
@@ -310,7 +364,7 @@ class TestSubmit:
         assert resp.data["priority"] == category.default_priority
 
     def test_submit_preserves_explicit_priority(
-        self, api_client, reporter, category_low
+        self, api_client, reporter, category_low, campus, department
     ):
         authenticate(api_client, reporter)
         create_resp = api_client.post(
@@ -318,8 +372,8 @@ class TestSubmit:
             {
                 "category": str(category_low.id),
                 "incident_date": "2026-07-22",
-                "campus": "Main Campus",
-                "department": "Engineering",
+                "campus_option": str(campus.id),
+                "department_option": str(department.id),
                 "location_text": "Building A, Room 101",
                 "description": "Explicit priority test",
                 "priority": "critical",

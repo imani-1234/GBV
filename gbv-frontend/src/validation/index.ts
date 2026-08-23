@@ -20,10 +20,20 @@ export const anonymousLoginSchema = z.object({
 export const submitReportSchema = z.object({
   category_id: z.string().min(1, "Select an incident category"),
   incident_date: z.string().min(1, "Select the date of incident"),
-  campus: z.string().min(1, "Select a campus"),
-  department: z.string().min(1, "Select a department"),
-  location_text: z.string().min(1, "Describe where this occurred"),
+  campus_option: z.string().min(1, "Select a campus"),
+  department_option: z.string().min(1, "Select a department"),
+  location_text: z.string().optional(),
   description: z.string().min(20, "Please provide at least 20 characters of description"),
+  victim_gender: z.enum(["female", "male", "non_binary", "self_describe", "prefer_not_to_say"]),
+  suspect_type: z.enum(["student", "lecturer", "staff", "visitor", "other"]).optional(),
+  suspect_campus: z.string().optional(),
+  suspect_department: z.string().optional(),
+  suspect_details: z.object({
+    name: z.string().optional(),
+    identifier: z.string().optional(),
+    relationship: z.string().optional(),
+    notes: z.string().optional(),
+  }).optional(),
 });
 
 export const createOfficerSchema = z.object({

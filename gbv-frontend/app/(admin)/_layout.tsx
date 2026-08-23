@@ -7,7 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TabBar, type TabDefinition } from "../../src/components/navigation";
 
-type AdminNavKey = "index" | "analytics" | "reports" | "user-management" | "case-oversight" | "audit-logs" | "categories" | "settings" | "more";
+type AdminNavKey = "index" | "analytics" | "reports" | "user-management" | "case-oversight" | "audit-logs" | "categories" | "locations" | "settings" | "more";
 
 type NavItem = { key: Exclude<AdminNavKey, "more">; label: string; icon: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap; route: string; description: string };
 
@@ -19,6 +19,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "case-oversight", label: "Cases", icon: "folder-open-outline", activeIcon: "folder-open", route: "/(admin)/case-oversight", description: "Case ownership and priority" },
   { key: "audit-logs", label: "Audit activity", icon: "document-text-outline", activeIcon: "document-text", route: "/(admin)/audit-logs", description: "Protected system trail" },
   { key: "categories", label: "Categories", icon: "pricetags-outline", activeIcon: "pricetags", route: "/(admin)/categories", description: "Incident classification" },
+  { key: "locations", label: "Locations", icon: "business-outline", activeIcon: "business", route: "/(admin)/locations", description: "Campuses and departments" },
   { key: "settings", label: "Settings", icon: "settings-outline", activeIcon: "settings", route: "/(admin)/settings", description: "Workspace configuration" },
 ];
 
@@ -58,7 +59,7 @@ export default function AdminLayout() {
     if (item) navigate(item);
   };
 
-  return <View style={styles.container}><StatusBar style="dark" /><Stack screenOptions={({ route }) => ({ headerShown: false, contentStyle: route.name === "index" ? undefined : { paddingTop: insets.top + 10, backgroundColor: "#FEFDFE" } })}><Stack.Screen name="index" /><Stack.Screen name="analytics" /><Stack.Screen name="reports" /><Stack.Screen name="user-management" /><Stack.Screen name="case-oversight" /><Stack.Screen name="audit-logs" /><Stack.Screen name="categories" /><Stack.Screen name="settings" /></Stack><TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} tone="auth" /><Modal visible={governanceOpen} transparent animationType="slide" onRequestClose={() => setGovernanceOpen(false)}><Pressable style={styles.backdrop} onPress={() => setGovernanceOpen(false)}><Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 18) }]} onPress={() => undefined}><View style={styles.sheetHandle} /><View style={styles.sheetHead}><View><Text style={styles.sheetEyebrow}>ADMINISTRATION</Text><Text style={styles.sheetTitle}>Governance tools</Text><Text style={styles.sheetText}>Private controls for the Sauti Yako safeguarding workspace.</Text></View><Pressable onPress={() => setGovernanceOpen(false)} style={styles.closeButton} accessibilityLabel="Close governance navigation"><Ionicons name="close" size={21} color="#813BBC" /></Pressable></View><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.governanceList}>{governanceItems.map((item) => <GovernanceRow key={item.key} item={item} onNavigate={navigate} />)}</ScrollView></Pressable></Pressable></Modal></View>;
+  return <View style={styles.container}><StatusBar style="dark" /><Stack screenOptions={({ route }) => ({ headerShown: false, contentStyle: route.name === "index" ? undefined : { paddingTop: insets.top + 10, backgroundColor: "#FEFDFE" } })}><Stack.Screen name="index" /><Stack.Screen name="analytics" /><Stack.Screen name="reports" /><Stack.Screen name="user-management" /><Stack.Screen name="case-oversight" /><Stack.Screen name="audit-logs" /><Stack.Screen name="categories" /><Stack.Screen name="locations" /><Stack.Screen name="settings" /></Stack><TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} tone="auth" /><Modal visible={governanceOpen} transparent animationType="slide" onRequestClose={() => setGovernanceOpen(false)}><Pressable style={styles.backdrop} onPress={() => setGovernanceOpen(false)}><Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 18) }]} onPress={() => undefined}><View style={styles.sheetHandle} /><View style={styles.sheetHead}><View><Text style={styles.sheetEyebrow}>ADMINISTRATION</Text><Text style={styles.sheetTitle}>Governance tools</Text><Text style={styles.sheetText}>Private controls for the Sauti Yako safeguarding workspace.</Text></View><Pressable onPress={() => setGovernanceOpen(false)} style={styles.closeButton} accessibilityLabel="Close governance navigation"><Ionicons name="close" size={21} color="#813BBC" /></Pressable></View><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.governanceList}>{governanceItems.map((item) => <GovernanceRow key={item.key} item={item} onNavigate={navigate} />)}</ScrollView></Pressable></Pressable></Modal></View>;
 }
 
 const styles = StyleSheet.create({

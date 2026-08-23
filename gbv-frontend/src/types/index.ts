@@ -72,8 +72,15 @@ export interface Report {
   incident_date: string;
   campus: string;
   department: string;
+  campus_option?: Campus | null;
+  department_option?: Department | null;
   location_text: string;
   description: string;
+  victim_gender?: VictimGender | "";
+  suspect_type?: SuspectType | "";
+  suspect_campus?: Campus | null;
+  suspect_department?: Department | null;
+  suspect_details?: SuspectDetails;
   priority: "low" | "medium" | "high" | "critical";
   reporter_info: ReporterInfo;
   evidence: Evidence[];
@@ -92,6 +99,32 @@ export interface IncidentCategory {
   name: string;
   description: string;
   default_priority: string;
+}
+
+export type VictimGender = "female" | "male" | "non_binary" | "self_describe" | "prefer_not_to_say";
+export type SuspectType = "student" | "lecturer" | "staff" | "visitor" | "other";
+
+export interface Campus {
+  id: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+}
+
+export interface Department {
+  id: string;
+  campus: string;
+  campus_name: string;
+  name: string;
+  code: string;
+  is_active: boolean;
+}
+
+export interface SuspectDetails {
+  name?: string;
+  identifier?: string;
+  relationship?: string;
+  notes?: string;
 }
 
 export interface Evidence {
