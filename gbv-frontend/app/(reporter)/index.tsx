@@ -1,254 +1,135 @@
 import { useCallback } from "react";
-import { View, Text, ScrollView, RefreshControl, StyleSheet, Pressable } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/theme/ThemeProvider";
-import { Button, Card, Chip, Divider, Skeleton } from "../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 import { reportsApi } from "../../src/api/reports";
 import { casesApi } from "../../src/api/cases";
-import { BrandLockup } from "../../src/components/branding/BrandLockup";
 import { useAuthStore } from "../../src/stores/authStore";
-import type { Case, CaseStatus } from "../../src/types";
+import { mayFetchReporterCases } from "../../src/utils/reporterAccess";
+import type { Report } from "../../src/types";
 
-const STATUS_CHIP_COLORS: Record<string, { bg: string; text: string }> = {
-  PENDING_REVIEW: { bg: "#FFF3CD", text: "#856404" },
-  ASSIGNED: { bg: "#CCE5FF", text: "#004085" },
-  UNDER_REVIEW: { bg: "#D4EDDA", text: "#155724" },
-  AWAITING_REPORTER_RESPONSE: { bg: "#F8D7DA", text: "#721C24" },
-  UNDER_INVESTIGATION: { bg: "#E2D5F1", text: "#4A1B7A" },
-  REFERRED: { bg: "#FFF3CD", text: "#856404" },
-  RESOLVED: { bg: "#D4EDDA", text: "#155724" },
-  CLOSED: { bg: "#E2E3E5", text: "#383D41" },
-  REOPENED: { bg: "#F8D7DA", text: "#721C24" },
-};
-
-function getStatusLabel(status: string): string {
-  return status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+function labelForStatus(status: string) {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-function formatDate(): string {
-  return new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-}
-
-function LoadingSkeleton() {
-  const { scheme, spacing, borderRadius } = useTheme();
-  return (
-    <View style={{ padding: 24 }}>
-      <Skeleton width="60%" height={28} borderRadius={borderRadius.sm} />
-      <Skeleton width="40%" height={16} borderRadius={borderRadius.sm} style={{ marginTop: 8 }} />
-      <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.xl, padding: 20, marginTop: 24 }}>
-        <View style={{ flex: 1 }}>
-          <Skeleton width="60%" height={18} borderRadius={4} />
-          <Skeleton width="90%" height={12} borderRadius={4} style={{ marginTop: 6 }} />
-          <Skeleton width="70%" height={12} borderRadius={4} style={{ marginTop: 4 }} />
-        </View>
-        <Skeleton width={56} height={56} borderRadius={28} />
-      </View>
-      <Skeleton width="30%" height={16} borderRadius={4} style={{ marginTop: 24 }} />
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-        {[1, 2, 3].map((i) => (
-          <View key={i} style={{ flex: 1, padding: 14, alignItems: "center", borderWidth: 1, borderColor: scheme.outlineVariant, borderRadius: borderRadius.lg }}>
-            <Skeleton width="40%" height={24} borderRadius={4} />
-            <Skeleton width="60%" height={12} borderRadius={4} style={{ marginTop: 4 }} />
-          </View>
-        ))}
-      </View>
-      <Skeleton width="30%" height={16} borderRadius={4} style={{ marginTop: 24 }} />
-      {[1, 2].map((i) => (
-        <View key={i} style={{ padding: 16, borderWidth: 1, borderColor: scheme.outlineVariant, borderRadius: borderRadius.lg, marginTop: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-            <Skeleton width={70} height={22} borderRadius={11} />
-            <Skeleton width={50} height={12} borderRadius={4} style={{ marginLeft: "auto" }} />
-          </View>
-          <Skeleton width="80%" height={14} borderRadius={4} />
-        </View>
-      ))}
-    </View>
-  );
+function shortDate(value?: string) {
+  if (!value) return "Recently";
+  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export default function ReporterHome() {
   const router = useRouter();
-  const { scheme, spacing, borderRadius, typography, getElevation } = useTheme();
-  const isAnonymous = useAuthStore((s) => s.isAnonymous);
-
+  const isAnonymous = useAuthStore((state) => state.isAnonymous);
+  const loadCases = mayFetchReporterCases(isAnonymous);
   const { data: reportsData, isLoading: reportsLoading, refetch: refetchReports } = useQuery({
     queryKey: ["reporter-reports"],
     queryFn: () => reportsApi.list(),
   });
-
   const { data: casesData, isLoading: casesLoading, refetch: refetchCases } = useQuery({
     queryKey: ["reporter-cases"],
     queryFn: () => casesApi.list(),
+    enabled: loadCases,
   });
 
-  const isLoading = reportsLoading || casesLoading;
   const reports = reportsData?.results || [];
   const cases = casesData?.results || [];
-  const openCases = cases.filter((c) => !["RESOLVED", "CLOSED"].includes(c.status));
-  const totalReports = reports.length;
-  const resolvedCases = cases.filter((c) => c.status === "RESOLVED" || c.status === "CLOSED").length;
+  const activeReports = reports.filter((report) => !["resolved", "closed"].includes(report.status.toLowerCase()));
+  const completedReports = reports.filter((report) => ["resolved", "closed"].includes(report.status.toLowerCase()));
+  const openCases = cases.filter((item) => !["RESOLVED", "CLOSED"].includes(item.status));
+  const loading = reportsLoading || (loadCases && casesLoading);
 
-  const onRefresh = useCallback(() => {
+  const refresh = useCallback(() => {
     refetchReports();
-    refetchCases();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
-        <ScrollView><LoadingSkeleton /></ScrollView>
-      </SafeAreaView>
-    );
-  }
+    if (loadCases) refetchCases();
+  }, [loadCases, refetchCases, refetchReports]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <StatusBar style="dark" />
+      <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={scheme.primary} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#A95BEA" />}
       >
-        {/* Branded greeting */}
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.label.medium, styles.eyebrow, { color: scheme.secondary }]}>SAUTI YAKO • SUZA ZANZIBAR</Text>
-            <Text style={[typography.display.small, { color: scheme.onBackground, fontSize: 28, lineHeight: 36, marginTop: 6 }]}>
-              {getGreeting()}
-            </Text>
-            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: 4 }]}>
-              {formatDate()}
-            </Text>
+        <View style={styles.introRow}>
+          <View style={styles.introText}>
+            <Text style={styles.eyebrow}>{isAnonymous ? "PRIVATE REPORTING SPACE" : "SAUTI YAKO"}</Text>
+            <Text style={styles.title}>{isAnonymous ? "Your reports,{`\n`}your privacy." : "Your voice{`\n`}matters."}</Text>
           </View>
-          <BrandLockup variant="minimal" width={64} height={64} />
+          <View style={styles.profileMark}><Ionicons name={isAnonymous ? "eye-off-outline" : "person-outline"} size={21} color="#7E36B7" /></View>
         </View>
 
-        {/* Submit CTA */}
-        <Pressable
-          onPress={() => router.push("/(reporter)/reports/new")}
-          style={[styles.ctaCard, { backgroundColor: scheme.primaryContainer, borderRadius: borderRadius.xl }, getElevation(1)]}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.title.medium, { color: scheme.onPrimaryContainer }]}>
-              Submit a Report
-            </Text>
-            <Text style={[typography.body.medium, { color: scheme.onPrimaryContainer, marginTop: 4, opacity: 0.8 }]}>
-              We are here to support you. Your report will be handled with care and confidentiality.
-            </Text>
-          </View>
-          <View style={[styles.ctaIcon, { backgroundColor: scheme.primary }]}>
-            <Ionicons name="shield-checkmark" size={28} color={scheme.onPrimary} />
-          </View>
+        <Pressable onPress={() => router.push("/(reporter)/reports/new")} style={({ pressed }) => [styles.primaryCard, pressed && styles.pressed]}>
+          <View style={styles.primaryIcon}><Ionicons name="create-outline" size={23} color="#FFFFFF" /></View>
+          <View style={styles.primaryCopy}><Text style={styles.primaryTitle}>Create report</Text><Text style={styles.primaryText}>Share only what feels safe for you.</Text></View>
+          <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
         </Pressable>
 
-        {/* Quick Stats */}
-        <Text style={[typography.title.small, { color: scheme.onBackground, marginTop: spacing.lg, marginBottom: spacing.sm }]}>
-          Overview
-        </Text>
+        <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Overview</Text><Pressable onPress={() => router.push("/(reporter)/reports")}><Text style={styles.sectionLink}>View reports</Text></Pressable></View>
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.lg, borderColor: scheme.outlineVariant }]}>
-            <Text style={[typography.display.small, { color: scheme.primary, fontSize: 24, lineHeight: 32 }]}>{totalReports}</Text>
-            <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant, marginTop: 2 }]}>Total Reports</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.lg, borderColor: scheme.outlineVariant }]}>
-            <Text style={[typography.display.small, { color: scheme.secondary, fontSize: 24, lineHeight: 32 }]}>{openCases.length}</Text>
-            <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant, marginTop: 2 }]}>Open Cases</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.lg, borderColor: scheme.outlineVariant }]}>
-            <Text style={[typography.display.small, { color: "#10B981", fontSize: 24, lineHeight: 32 }]}>{resolvedCases}</Text>
-            <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant, marginTop: 2 }]}>Resolved</Text>
-          </View>
+          <View style={styles.statCard}><Text style={styles.statNumber}>{reports.length}</Text><Text style={styles.statLabel}>Reports</Text></View>
+          <View style={styles.statCard}><Text style={styles.statNumber}>{loadCases ? openCases.length : activeReports.length}</Text><Text style={styles.statLabel}>{loadCases ? "In progress" : "Active"}</Text></View>
+          <View style={styles.statCard}><Text style={styles.statNumber}>{loadCases ? cases.filter((item) => ["RESOLVED", "CLOSED"].includes(item.status)).length : completedReports.length}</Text><Text style={styles.statLabel}>Closed</Text></View>
         </View>
 
-        <Divider />
-
-        {/* Open Cases */}
-        <Text style={[typography.title.small, { color: scheme.onBackground, marginBottom: spacing.sm }]}>
-          Open Cases
-        </Text>
-
-        {openCases.length === 0 ? (
-          <View style={[styles.emptyState, { backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.lg }]}>
-            <Ionicons name="folder-open-outline" size={32} color={scheme.onSurfaceVariant} />
-            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: spacing.sm, textAlign: "center" }]}>
-              No open cases. When you submit a report and it is assigned, your case updates will appear here.
-            </Text>
-          </View>
-        ) : (
-          openCases.slice(0, 3).map((c: Case) => (
-            <Pressable
-              key={c.id}
-              onPress={() => router.push(`/reports/${c.report?.id || c.id}`)}
-              style={[styles.caseCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.lg, borderColor: scheme.outlineVariant }]}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Chip
-                  label={getStatusLabel(c.status)}
-                  variant="filter"
-                  selected
-                  onPress={() => {}}
-                />
-                {c.report?.case_number && (
-                  <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant, marginLeft: "auto" }]}>
-                    #{c.report.case_number}
-                  </Text>
-                )}
-              </View>
-              <Text style={[typography.body.medium, { color: scheme.onSurface }]} numberOfLines={2}>
-                {c.report?.description || "No description"}
-              </Text>
-            </Pressable>
-          ))
-        )}
-
-        {openCases.length > 3 && (
-          <Pressable onPress={() => router.push("/(reporter)/reports")}>
-            <Text style={[typography.label.large, { color: scheme.primary, textAlign: "center", marginTop: spacing.sm }]}>
-              View all {openCases.length} cases
-            </Text>
+        <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>{isAnonymous ? "Your reports" : "Recent updates"}</Text></View>
+        {loading ? <View style={styles.loadingCard}><ActivityIndicator color="#A95BEA" /><Text style={styles.loadingText}>Loading your private space…</Text></View> : reports.length === 0 ? (
+          <View style={styles.emptyCard}><Ionicons name="document-text-outline" size={29} color="#813BBC" /><Text style={styles.emptyTitle}>No reports yet</Text><Text style={styles.emptyText}>When you are ready, your first report will appear here.</Text></View>
+        ) : reports.slice(0, 3).map((report: Report) => (
+          <Pressable key={report.id} onPress={() => router.push(`/reports/${report.id}`)} style={({ pressed }) => [styles.reportCard, pressed && styles.pressed]}>
+            <View style={styles.reportIcon}><Ionicons name="document-text-outline" size={20} color="#813BBC" /></View>
+            <View style={styles.reportCopy}><Text style={styles.reportTitle} numberOfLines={1}>{report.category?.name || "Incident report"}</Text><Text style={styles.reportDate}>{shortDate(report.created_at)}</Text></View>
+            <View style={styles.statusPill}><Text style={styles.statusText}>{labelForStatus(report.status)}</Text></View>
           </Pressable>
-        )}
+        ))}
 
-        <Divider />
-
-        {/* Need Help */}
-        <Pressable
-          onPress={() => router.push("/(auth)/resources")}
-          style={[styles.helpCard, { backgroundColor: scheme.errorContainer, borderRadius: borderRadius.xl }]}
-        >
-          <Ionicons name="heart" size={24} color={scheme.error} />
-          <View style={{ marginLeft: spacing.md, flex: 1 }}>
-            <Text style={[typography.title.small, { color: scheme.onErrorContainer }]}>Need immediate help?</Text>
-            <Text style={[typography.body.small, { color: scheme.onErrorContainer, marginTop: 2, opacity: 0.8 }]}>
-              Access support resources and helplines
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={scheme.onErrorContainer} />
-        </Pressable>
+        <Pressable onPress={() => router.push("/(auth)/resources")} style={styles.helpCard}><Ionicons name="heart-outline" size={21} color="#8B475F" /><View style={styles.helpCopy}><Text style={styles.helpTitle}>Need immediate help?</Text><Text style={styles.helpText}>Private support is available at any time.</Text></View><Ionicons name="chevron-forward" size={19} color="#8B475F" /></Pressable>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 40 },
-  headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 22 },
-  eyebrow: { letterSpacing: 1.1 },
-  ctaCard: { flexDirection: "row", alignItems: "center", padding: 20 },
-  ctaIcon: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginLeft: 16 },
-  statsRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
-  statCard: { flex: 1, padding: 14, alignItems: "center", borderWidth: 1 },
-  emptyState: { padding: 32, alignItems: "center" },
-  caseCard: { padding: 16, marginBottom: 8, borderWidth: 1 },
-  helpCard: { flexDirection: "row", alignItems: "center", padding: 18 },
+  safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  lilacArc: { position: "absolute", width: 620, height: 500, top: -280, left: -190, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 540, height: 400, left: 85, top: 108, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
+  scroll: { paddingHorizontal: 27, paddingTop: 26, paddingBottom: 30 },
+  introRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 30 },
+  introText: { flex: 1 },
+  eyebrow: { color: "#7E36B7", fontSize: 11.5, letterSpacing: 1.9, fontWeight: "800", marginBottom: 12 },
+  title: { color: "#080709", fontSize: 35, lineHeight: 39, fontWeight: "700", letterSpacing: -1.4 },
+  profileMark: { width: 45, height: 45, borderRadius: 23, backgroundColor: "#F1E2FD", alignItems: "center", justifyContent: "center", marginTop: 5 },
+  primaryCard: { flexDirection: "row", alignItems: "center", padding: 18, borderRadius: 27, backgroundColor: "#A95BEA", shadowColor: "#A75CDF", shadowOpacity: 0.22, shadowRadius: 9, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  primaryIcon: { width: 43, height: 43, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.19)", alignItems: "center", justifyContent: "center", marginRight: 13 },
+  primaryCopy: { flex: 1 },
+  primaryTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "800" },
+  primaryText: { color: "rgba(255,255,255,0.84)", fontSize: 12.5, marginTop: 3 },
+  pressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
+  sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 29, marginBottom: 12 },
+  sectionTitle: { color: "#211E23", fontSize: 16.5, fontWeight: "800" },
+  sectionLink: { color: "#7E36B7", fontSize: 12.5, fontWeight: "800" },
+  statsRow: { flexDirection: "row", gap: 9 },
+  statCard: { flex: 1, minHeight: 83, borderRadius: 20, borderWidth: 1.1, borderColor: "#E0D9E2", backgroundColor: "rgba(255,255,255,0.72)", paddingHorizontal: 13, paddingVertical: 13 },
+  statNumber: { color: "#7E36B7", fontSize: 25, lineHeight: 29, fontWeight: "800" },
+  statLabel: { color: "#817B84", fontSize: 11.5, fontWeight: "600", marginTop: 4 },
+  loadingCard: { flexDirection: "row", alignItems: "center", gap: 9, padding: 19, borderRadius: 21, borderWidth: 1, borderColor: "#E2DCE4" },
+  loadingText: { color: "#817B84", fontSize: 13 },
+  emptyCard: { alignItems: "center", padding: 30, borderRadius: 23, borderWidth: 1.1, borderColor: "#DDD5E0", backgroundColor: "rgba(255,255,255,0.68)" },
+  emptyTitle: { color: "#29242C", fontSize: 16, fontWeight: "800", marginTop: 10 },
+  emptyText: { color: "#807A82", fontSize: 13, lineHeight: 19, textAlign: "center", marginTop: 5 },
+  reportCard: { flexDirection: "row", alignItems: "center", minHeight: 74, borderWidth: 1.1, borderColor: "#DDD5E0", backgroundColor: "rgba(255,255,255,0.72)", borderRadius: 21, paddingHorizontal: 13, marginBottom: 9 },
+  reportIcon: { width: 39, height: 39, borderRadius: 20, backgroundColor: "#F1E2FD", alignItems: "center", justifyContent: "center", marginRight: 11 },
+  reportCopy: { flex: 1, paddingRight: 8 },
+  reportTitle: { color: "#302C33", fontSize: 14, fontWeight: "800" },
+  reportDate: { color: "#87808A", fontSize: 11.5, marginTop: 3 },
+  statusPill: { maxWidth: 100, borderRadius: 12, backgroundColor: "#F1E2FD", paddingHorizontal: 9, paddingVertical: 5 },
+  statusText: { color: "#7234AA", fontSize: 9.5, lineHeight: 12, fontWeight: "800", textAlign: "center" },
+  helpCard: { flexDirection: "row", alignItems: "center", padding: 15, borderRadius: 22, borderColor: "#EBD6DE", borderWidth: 1, backgroundColor: "#FFF8FA", marginTop: 29 },
+  helpCopy: { flex: 1, marginLeft: 10 },
+  helpTitle: { color: "#8B475F", fontSize: 13.5, fontWeight: "800" },
+  helpText: { color: "#9A6C7B", fontSize: 11.5, marginTop: 3 },
 });

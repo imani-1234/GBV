@@ -1,64 +1,17 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/theme/ThemeProvider";
+import { StatusBar } from "expo-status-bar";
 import { ChatThread } from "../../src/components/shared";
 import { useAuthStore } from "../../src/stores/authStore";
 
 export default function ReporterMessagesScreen() {
   const router = useRouter();
   const { caseId } = useLocalSearchParams<{ caseId?: string }>();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
-  const user = useAuthStore((s) => s.user);
-
-  if (caseId) {
-    return (
-      <View style={{ flex: 1, backgroundColor: scheme.background }}>
-        <SafeAreaView edges={["top"]} style={{ backgroundColor: scheme.surface }}>
-          <View style={[styles.chatHeader, { backgroundColor: scheme.surface, borderBottomColor: scheme.outlineVariant }]}>
-            <Pressable onPress={() => router.back()} style={styles.headerBtn} accessibilityLabel="Go back">
-              <Ionicons name="arrow-back" size={24} color={scheme.onBackground} />
-            </Pressable>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text style={[typography.title.small, { color: scheme.onSurface }]}>Case Messages</Text>
-              <Text style={[typography.body.small, { color: scheme.onSurfaceVariant }]}>Secure conversation</Text>
-            </View>
-          </View>
-        </SafeAreaView>
-        <ChatThread caseId={caseId} currentUserRole="REPORTER" />
-      </View>
-    );
-  }
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
-      <View style={styles.noChat}>
-        <View style={[styles.emptyIcon, { backgroundColor: scheme.primaryContainer }]}>
-          <Ionicons name="chatbubble-ellipses-outline" size={48} color={scheme.primary} />
-        </View>
-        <Text style={[typography.title.medium, { color: scheme.onBackground, marginTop: spacing.md, textAlign: "center" }]}>
-          No conversation selected
-        </Text>
-        <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: spacing.xs, textAlign: "center", paddingHorizontal: 32 }]}>
-          Open a case report and tap "Case Messages" to start a secure conversation with your assigned officer.
-        </Text>
-        <Pressable
-          onPress={() => router.push("/(reporter)/reports")}
-          style={[styles.goToReports, { backgroundColor: scheme.primary, borderRadius: borderRadius.lg }]}
-        >
-          <Text style={[typography.label.large, { color: scheme.onPrimary }]}>View My Reports</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
-  );
+  const isAnonymous = useAuthStore((state) => state.isAnonymous);
+  if (caseId && !isAnonymous) return <View style={styles.chatRoot}><SafeAreaView style={styles.chatHeader} edges={["top"]}><Pressable onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={30} color="#141115" /></Pressable><View><Text style={styles.chatTitle}>Secure messages</Text><Text style={styles.chatSub}>Private conversation</Text></View></SafeAreaView><ChatThread caseId={caseId} currentUserRole="REPORTER" /></View>;
+  return <SafeAreaView style={styles.safeArea} edges={["top"]}><StatusBar style="dark" /><View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View><View style={styles.content}><View style={styles.iconCircle}><Ionicons name={isAnonymous ? "shield-checkmark-outline" : "chatbubble-ellipses-outline"} size={30} color="#813BBC" /></View><Text style={styles.eyebrow}>{isAnonymous ? "PRIVATE SPACE" : "MESSAGES"}</Text><Text style={styles.title}>{isAnonymous ? "Your report{`\n`}is protected." : "No messages{`\n`}yet."}</Text><Text style={styles.body}>{isAnonymous ? "Any update available for your report will appear safely in your report status." : "Open a report to view private follow-up from the support team."}</Text><Pressable onPress={() => router.push("/(reporter)/reports")} style={styles.button}><Text style={styles.buttonText}>View reports</Text><Ionicons name="arrow-forward" size={21} color="#FFFFFF" /></Pressable></View></SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  chatHeader: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8, paddingVertical: 10, borderBottomWidth: 1 },
-  headerBtn: { padding: 4 },
-  noChat: { flex: 1, justifyContent: "center", alignItems: "center" },
-  emptyIcon: { width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center" },
-  goToReports: { paddingHorizontal: 24, paddingVertical: 12, marginTop: 24 },
-});
+const styles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" }, chatRoot: { flex: 1, backgroundColor: "#FEFDFE" }, chatHeader: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingBottom: 11, borderBottomWidth: 1, borderBottomColor: "#E7DFE9", backgroundColor: "#FEFDFE" }, back: { padding: 4 }, chatTitle: { color: "#211E23", fontSize: 16, fontWeight: "800" }, chatSub: { color: "#817B84", fontSize: 11.5, marginTop: 2 }, lilacArc: { position: "absolute", width: 620, height: 560, top: -300, left: -200, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 }, lilacArcInner: { position: "absolute", width: 540, height: 450, left: 90, top: 108, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 }, content: { flex: 1, justifyContent: "center", paddingHorizontal: 48, paddingBottom: 10 }, iconCircle: { width: 68, height: 68, borderRadius: 34, alignItems: "center", justifyContent: "center", backgroundColor: "#F1E2FD", marginBottom: 28 }, eyebrow: { color: "#7E36B7", fontSize: 11, letterSpacing: 1.8, fontWeight: "800", marginBottom: 10 }, title: { color: "#09080A", fontSize: 36, lineHeight: 40, fontWeight: "700", letterSpacing: -1.4 }, body: { color: "#767178", fontSize: 15.5, lineHeight: 23, marginTop: 17 }, button: { height: 61, borderRadius: 31, backgroundColor: "#A95BEA", marginTop: 45, alignSelf: "flex-start", paddingHorizontal: 21, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9 }, buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" } });

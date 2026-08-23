@@ -34,3 +34,10 @@
 - [x] Add backend regression coverage for unique anonymous codes and complete anonymous registration/login behavior.
 - [x] Rebuild anonymous account access and the anonymous reporting cycle with the reference-matched mobile UI.
 - [x] Validate the end-to-end anonymous reporting flow, then commit and push the update.
+
+## Anonymous-Safe Reporter Experience
+
+- [x] Prevent anonymous users from requesting forbidden case endpoints while retaining access to their own reports and follow-up information.
+- [x] Add regression coverage for anonymous dashboard data selection and protected backend boundaries.
+- [x] Redesign the reporter dashboard, report list, report detail, messages, notifications, and settings in the reference-matched mobile UI system.
+- [x] Validate anonymous and identified reporter workflows, then commit and push the complete reporter update.

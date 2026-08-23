@@ -15,9 +15,10 @@ interface TabBarProps {
   tabs: TabDefinition[];
   activeTab: string;
   onTabPress: (key: string) => void;
+  tone?: "default" | "auth";
 }
 
-export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
+export function TabBar({ tabs, activeTab, onTabPress, tone = "default" }: TabBarProps) {
   const { scheme, spacing, typography } = useTheme();
   const insets = useSafeAreaInsets();
   const bottomPad = Platform.OS === "ios" ? insets.bottom : Math.max(insets.bottom, 4);
@@ -27,15 +28,17 @@ export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
       style={[
         styles.container,
         {
-          backgroundColor: scheme.surface,
-          borderTopColor: scheme.outlineVariant,
+          backgroundColor: tone === "auth" ? "#FEFDFE" : scheme.surface,
+          borderTopColor: tone === "auth" ? "#E7DFE9" : scheme.outlineVariant,
           paddingBottom: bottomPad,
         },
       ]}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.key;
-        const color = isActive ? scheme.navActiveTint : scheme.navInactiveTint;
+        const color = tone === "auth"
+          ? (isActive ? "#813BBC" : "#8A818D")
+          : (isActive ? scheme.navActiveTint : scheme.navInactiveTint);
         return (
           <Pressable
             key={tab.key}
@@ -44,7 +47,7 @@ export function TabBar({ tabs, activeTab, onTabPress }: TabBarProps) {
             accessibilityState={{ selected: isActive }}
             style={({ pressed }) => [styles.tab, pressed && styles.tabPressed]}
           >
-            <View style={[styles.iconPill, isActive && { backgroundColor: scheme.primaryContainer }]}>
+            <View style={[styles.iconPill, isActive && { backgroundColor: tone === "auth" ? "#F1E2FD" : scheme.primaryContainer }]}>
               <Ionicons
                 name={isActive && tab.activeIcon ? tab.activeIcon : tab.icon}
                 size={22}

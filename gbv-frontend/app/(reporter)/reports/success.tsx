@@ -1,62 +1,13 @@
-import { View, Text, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInUp, BounceIn } from "react-native-reanimated";
-import { useTheme } from "../../../src/theme/ThemeProvider";
-import { Button } from "../../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 
 export default function SubmissionSuccessScreen() {
   const router = useRouter();
-  const { caseNumber, reportId } = useLocalSearchParams<{ caseNumber: string; reportId: string }>();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]}>
-      <View style={styles.content}>
-        <Animated.View entering={BounceIn.duration(600).springify()} style={[styles.iconCircle, { backgroundColor: scheme.primaryContainer }]}>
-          <Ionicons name="checkmark-circle" size={64} color={scheme.primary} />
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.duration(400).delay(200)} style={{ alignItems: "center" }}>
-          <Text style={[typography.headline.small, { color: scheme.onBackground, textAlign: "center", marginTop: spacing.lg }]}>
-            Report Submitted
-          </Text>
-          {caseNumber && (
-            <View style={[styles.caseNumberBadge, { backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.md, marginTop: spacing.md }]}>
-              <Text style={[typography.title.medium, { color: scheme.primary }]}>#{caseNumber}</Text>
-            </View>
-          )}
-          <Text style={[typography.body.large, { color: scheme.onSurfaceVariant, textAlign: "center", marginTop: spacing.md, lineHeight: 24 }]}>
-            Your report has been received. Our team will review it and reach out to you through this platform.
-          </Text>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.duration(400).delay(400)} style={[styles.actions, { marginTop: spacing.xl }]}>
-          <Button
-            title="View Case Details"
-            variant="filled"
-            size="lg"
-            onPress={() => router.replace(`/reports/${reportId}`)}
-            style={{ width: "100%" }}
-          />
-          <Button
-            title="Back to Home"
-            variant="tonal"
-            size="lg"
-            onPress={() => router.replace("/(reporter)")}
-            style={{ width: "100%", marginTop: spacing.sm }}
-          />
-        </Animated.View>
-      </View>
-    </SafeAreaView>
-  );
+  const { reportId } = useLocalSearchParams<{ reportId: string }>();
+  return <SafeAreaView style={styles.safeArea}><StatusBar style="dark" /><View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View><View style={styles.content}><View style={styles.check}><Ionicons name="checkmark" size={42} color="#FFFFFF" /></View><Text style={styles.eyebrow}>REPORT RECEIVED</Text><Text style={styles.title}>You have been{`\n`}heard.</Text><Text style={styles.body}>Your report is now safely stored. You can return to this private space whenever you need to check it.</Text><Pressable onPress={() => router.replace(`/reports/${reportId}`)} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryText}>View report</Text><Ionicons name="arrow-forward" size={21} color="#FFFFFF" /></Pressable><Pressable onPress={() => router.replace("/(reporter)")} style={styles.secondary}><Text style={styles.secondaryText}>Back to home</Text></Pressable></View></SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
-  iconCircle: { width: 100, height: 100, borderRadius: 50, alignItems: "center", justifyContent: "center" },
-  caseNumberBadge: { paddingHorizontal: 20, paddingVertical: 8 },
-  actions: { width: "100%" },
-});
+const styles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" }, lilacArc: { position: "absolute", width: 620, height: 560, top: -290, left: -205, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 }, lilacArcInner: { position: "absolute", width: 540, height: 450, left: 92, top: 105, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 }, content: { flex: 1, justifyContent: "center", paddingHorizontal: 47, paddingTop: 40 }, check: { width: 82, height: 82, borderRadius: 41, backgroundColor: "#A95BEA", alignItems: "center", justifyContent: "center", marginBottom: 35, shadowColor: "#A75CDF", shadowOpacity: 0.22, shadowRadius: 9, shadowOffset: { width: 0, height: 4 }, elevation: 3 }, eyebrow: { color: "#7E36B7", fontSize: 11, letterSpacing: 1.8, fontWeight: "800", marginBottom: 11 }, title: { color: "#09080A", fontSize: 37, lineHeight: 41, fontWeight: "700", letterSpacing: -1.5 }, body: { color: "#767178", fontSize: 15.5, lineHeight: 23, marginTop: 18 }, primaryButton: { height: 61, borderRadius: 31, backgroundColor: "#A95BEA", marginTop: 48, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }, primaryText: { color: "#FFFFFF", fontSize: 16.5, fontWeight: "800" }, secondary: { alignSelf: "center", marginTop: 19, padding: 8 }, secondaryText: { color: "#7E36B7", fontSize: 14, fontWeight: "800" }, pressed: { transform: [{ scale: 0.98 }], opacity: 0.9 } });

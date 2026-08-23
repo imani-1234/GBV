@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Stack } from "expo-router/stack";
@@ -5,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../src/theme/ThemeProvider";
 import { TabBar } from "../../src/components/navigation/TabBar";
 import type { TabDefinition } from "../../src/components/navigation/TabBar";
+import { useAuthStore } from "../../src/stores/authStore";
 
 const tabs: TabDefinition[] = [
   { key: "index", label: "Home", icon: "home-outline", activeIcon: "home" },
@@ -27,6 +29,14 @@ export default function ReporterLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const activeTab = getActiveTab(pathname);
+  const isAnonymous = useAuthStore((state) => state.isAnonymous);
+  const visibleTabs = isAnonymous ? tabs.filter((tab) => !["messages", "notifications"].includes(tab.key)) : tabs;
+
+  useEffect(() => {
+    if (isAnonymous && ["messages", "notifications"].includes(activeTab)) {
+      router.replace("/(reporter)");
+    }
+  }, [activeTab, isAnonymous, router]);
 
   const handleTabPress = (key: string) => {
     router.replace(`/(reporter)/${key === "index" ? "" : key}`);
@@ -44,7 +54,7 @@ export default function ReporterLayout() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="settings" />
       </Stack>
-      <TabBar tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />
+      <TabBar tabs={visibleTabs} activeTab={activeTab} onTabPress={handleTabPress} tone="auth" />
     </SafeAreaView>
   );
 }

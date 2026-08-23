@@ -1,164 +1,42 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Image } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../../src/theme/ThemeProvider";
-import { Button, Card, Chip, Divider, Skeleton, StatusTimeline } from "../../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 import { reportsApi } from "../../../src/api/reports";
-import { casesApi } from "../../../src/api/cases";
-import type { Case, CaseStatus, Evidence } from "../../../src/types";
+import type { Evidence } from "../../../src/types";
 
-const TIMELINE_STEPS = [
-  { status: "submitted", label: "Report Submitted" },
-  { status: "PENDING_REVIEW", label: "Pending Review" },
-  { status: "ASSIGNED", label: "Assigned to Officer" },
-  { status: "UNDER_REVIEW", label: "Under Review" },
-  { status: "AWAITING_REPORTER_RESPONSE", label: "Awaiting Your Response" },
-  { status: "UNDER_INVESTIGATION", label: "Under Investigation" },
-  { status: "RESOLVED", label: "Resolved" },
-  { status: "CLOSED", label: "Closed" },
-];
-
-function getFileTypeIcon(fileType?: string | null): keyof typeof Ionicons.glyphMap {
-  const normalized = typeof fileType === "string" ? fileType.toLowerCase() : "";
-  if (normalized.startsWith("image")) return "image-outline";
-  if (normalized.startsWith("video")) return "videocam-outline";
-  if (normalized.startsWith("audio")) return "mic-outline";
-  if (normalized.includes("pdf")) return "document-outline";
-  return "document-outline";
-}
+const statusLabel = (value: string) => value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 export default function ReportDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
-
-  const { data: report, isLoading: reportLoading } = useQuery({
-    queryKey: ["report", id],
-    queryFn: () => reportsApi.get(id!),
-    enabled: !!id,
-  });
-
-  const { data: caseData, isLoading: caseLoading } = useQuery({
-    queryKey: ["case-by-report", id],
-    queryFn: () => casesApi.list({ report_id: id! }).then((r) => r.results[0] ?? null),
-    enabled: !!id,
-  });
-
-  const isLoading = reportLoading || caseLoading;
-
-  if (isLoading || !report) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
-        <View style={{ padding: 24 }}>
-          <Skeleton width="60%" height={28} borderRadius={borderRadius.sm} />
-          <Skeleton width="100%" height={120} borderRadius={borderRadius.xl} style={{ marginTop: 16 }} />
-          <Skeleton width="100%" height={200} borderRadius={borderRadius.lg} style={{ marginTop: 16 }} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const c = caseData;
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Ionicons name="arrow-back" size={24} color={scheme.onBackground} />
-        </Pressable>
-
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.md }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.headline.small, { color: scheme.onBackground }]}>
-              {report.category?.name || "Incident Report"}
-            </Text>
-            {report.case_number && (
-              <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>
-                Case #{report.case_number}
-              </Text>
-            )}
-          </View>
-          <Chip label={String(report.status || "unknown").replace(/_/g, " ")} variant="filter" selected onPress={() => {}} />
-        </View>
-
-        {c && (
-          <Card variant="filled" padding="md" style={{ marginBottom: spacing.md }}>
-            <Text style={[typography.title.small, { color: scheme.onSurface, marginBottom: spacing.md }]}>Case Progress</Text>
-            <StatusTimeline
-              steps={TIMELINE_STEPS.map((s) => ({
-                ...s,
-                date: c.status === s.status ? new Date(c.updated_at || c.created_at).toLocaleDateString() : undefined,
-              }))}
-              currentStatus={c.status}
-            />
-          </Card>
-        )}
-
-        <Card variant="outlined" padding="md" style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.title.small, { color: scheme.onSurface, marginBottom: spacing.sm }]}>Incident Details</Text>
-          <View style={{ gap: 12 }}>
-            <View>
-              <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Description</Text>
-              <Text style={[typography.body.medium, { color: scheme.onSurface, marginTop: 2 }]}>{report.description || "No description provided"}</Text>
-            </View>
-            <View style={{ flexDirection: "row", gap: 16 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Date</Text>
-                <Text style={[typography.body.medium, { color: scheme.onSurface, marginTop: 2 }]}>{new Date(report.incident_date).toLocaleDateString()}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.label.medium, { color: scheme.onSurfaceVariant }]}>Location</Text>
-                <Text style={[typography.body.medium, { color: scheme.onSurface, marginTop: 2 }]}>{report.location_text || report.campus || "Not specified"}</Text>
-              </View>
-            </View>
-          </View>
-        </Card>
-
-        {report.evidence && report.evidence.length > 0 && (
-          <Card variant="outlined" padding="md" style={{ marginBottom: spacing.md }}>
-            <Text style={[typography.title.small, { color: scheme.onSurface, marginBottom: spacing.sm }]}>Evidence ({report.evidence.length})</Text>
-            <View style={{ gap: 8 }}>
-              {report.evidence.map((ev: Evidence) => (
-                <View key={ev.id} style={[styles.evidenceItem, { backgroundColor: scheme.surfaceVariant, borderRadius: borderRadius.md }]}>
-                  <Ionicons name={getFileTypeIcon(ev.file_type)} size={20} color={scheme.onSurfaceVariant} />
-                  <Text style={[typography.body.medium, { color: scheme.onSurface, marginLeft: 8, flex: 1 }]} numberOfLines={1}>
-                    {typeof ev.file === "string" ? ev.file.split("/").pop() || "Attachment" : "Attachment"}
-                  </Text>
-                  <Text style={[typography.label.small, { color: scheme.onSurfaceVariant }]}>
-                    {new Date(ev.created_at).toLocaleDateString()}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </Card>
-        )}
-
-        <Divider />
-
-        <Pressable
-          onPress={() => router.push(`/messages?caseId=${c?.id || id}`)}
-          style={[styles.messagesEntry, { backgroundColor: scheme.primaryContainer, borderRadius: borderRadius.xl }]}
-        >
-          <Ionicons name="chatbubble-ellipses" size={24} color={scheme.onPrimaryContainer} />
-          <View style={{ marginLeft: spacing.md, flex: 1 }}>
-            <Text style={[typography.title.small, { color: scheme.onPrimaryContainer }]}>Case Messages</Text>
-            <Text style={[typography.body.small, { color: scheme.onPrimaryContainer, opacity: 0.8 }]}>
-              Communicate securely with your assigned officer
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={scheme.onPrimaryContainer} />
-        </Pressable>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const { data: report, isLoading } = useQuery({ queryKey: ["report", id], queryFn: () => reportsApi.get(id!), enabled: !!id });
+  if (isLoading || !report) return <SafeAreaView style={styles.safeArea}><View style={styles.loading}><ActivityIndicator color="#A95BEA" /><Text style={styles.loadingText}>Opening your report…</Text></View></SafeAreaView>;
+  return <SafeAreaView style={styles.safeArea} edges={["top"]}><StatusBar style="dark" /><View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View><ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}><Pressable onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-back" size={31} color="#141115" /></Pressable><Text style={styles.eyebrow}>PRIVATE REPORT</Text><Text style={styles.title}>{report.category?.name || "Incident{`\n`}report"}</Text><View style={styles.statusLine}><View style={styles.statusPill}><Text style={styles.statusText}>{statusLabel(report.status)}</Text></View><Text style={styles.statusHelp}>We will update you through this space.</Text></View><View style={styles.detailCard}><Text style={styles.cardLabel}>WHAT HAPPENED</Text><Text style={styles.body}>{report.description || "No description provided."}</Text></View><View style={styles.detailCard}><Text style={styles.cardLabel}>WHEN & WHERE</Text><Text style={styles.body}>{new Date(report.incident_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</Text><Text style={styles.muted}>{report.location_text || report.campus || "Location not specified"}</Text></View>{report.evidence?.length ? <View style={styles.detailCard}><Text style={styles.cardLabel}>EVIDENCE</Text>{report.evidence.map((file: Evidence) => <View key={file.id} style={styles.file}><Ionicons name="document-outline" size={19} color="#813BBC" /><Text style={styles.fileName} numberOfLines={1}>{typeof file.file === "string" ? file.file.split("/").pop() || "Attachment" : "Attachment"}</Text></View>)}</View> : null}<View style={styles.privateNote}><Ionicons name="shield-checkmark-outline" size={19} color="#8B475F" /><Text style={styles.privateText}>Your identity and report details remain private.</Text></View></ScrollView></SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 40 },
-  back: { marginBottom: 16, alignSelf: "flex-start" },
-  evidenceItem: { flexDirection: "row", alignItems: "center", padding: 12 },
-  messagesEntry: { flexDirection: "row", alignItems: "center", padding: 18, marginTop: 8 },
+  safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  lilacArc: { position: "absolute", width: 620, height: 430, top: -295, left: -30, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 540, height: 350, top: 115, left: -83, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 },
+  scroll: { paddingHorizontal: 29, paddingTop: 11, paddingBottom: 30 },
+  back: { alignSelf: "flex-start", padding: 4, marginBottom: 25 },
+  eyebrow: { color: "#7E36B7", fontSize: 11, letterSpacing: 1.8, fontWeight: "800", marginBottom: 8 },
+  title: { color: "#09080A", fontSize: 31, lineHeight: 36, fontWeight: "700", letterSpacing: -1.2 },
+  statusLine: { flexDirection: "row", alignItems: "center", marginTop: 17, marginBottom: 24 },
+  statusPill: { borderRadius: 13, backgroundColor: "#F1E2FD", paddingVertical: 6, paddingHorizontal: 11 },
+  statusText: { color: "#7132AA", fontSize: 10.5, fontWeight: "800" },
+  statusHelp: { color: "#837C86", fontSize: 11.5, marginLeft: 10, flex: 1 },
+  detailCard: { borderRadius: 22, borderWidth: 1.1, borderColor: "#DDD5E0", backgroundColor: "rgba(255,255,255,0.72)", padding: 17, marginBottom: 10 },
+  cardLabel: { color: "#7E36B7", fontSize: 10.5, letterSpacing: 1.2, fontWeight: "800", marginBottom: 9 },
+  body: { color: "#302C33", fontSize: 14, lineHeight: 21 },
+  muted: { color: "#817B84", fontSize: 12.5, marginTop: 5 },
+  file: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 7 },
+  fileName: { flex: 1, color: "#453F48", fontSize: 13 },
+  privateNote: { flexDirection: "row", alignItems: "center", gap: 9, borderRadius: 21, borderWidth: 1, borderColor: "#EBD6DE", backgroundColor: "#FFF8FA", padding: 14, marginTop: 8 },
+  privateText: { flex: 1, color: "#8B475F", fontSize: 12.5, fontWeight: "600" },
+  loading: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10 },
+  loadingText: { color: "#817B84", fontSize: 13 },
 });

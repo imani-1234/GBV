@@ -1,117 +1,24 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert, Platform } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/theme/ThemeProvider";
-import { Button, Divider } from "../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../../src/stores/authStore";
 import { authApi } from "../../src/api/auth";
 
-const STORAGE_KEY_REFRESH = "auth_refresh_token";
-
+const refreshStorageKey = "auth_refresh_token";
 export default function ReporterSettingsScreen() {
   const router = useRouter();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
-  const user = useAuthStore((s) => s.user);
-  const isAnonymous = useAuthStore((s) => s.isAnonymous);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const user = useAuthStore((state) => state.user);
+  const isAnonymous = useAuthStore((state) => state.isAnonymous);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
   const [loggingOut, setLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    try {
-      const refreshToken = await SecureStore.getItemAsync(STORAGE_KEY_REFRESH);
-      if (refreshToken) {
-        await authApi.logout(refreshToken).catch(() => {});
-      }
-    } catch {}
-    await clearAuth();
-    router.replace("/(auth)");
-  };
-
-  const confirmLogout = () => {
-    if (Platform.OS === "web") {
-      handleLogout();
-    } else {
-      Alert.alert("Logout", "Are you sure you want to sign out?", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", style: "destructive", onPress: handleLogout },
-      ]);
-    }
-  };
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={[typography.headline.small, { color: scheme.onBackground, marginBottom: spacing.lg }]}>Settings</Text>
-
-        {!isAnonymous && user && (
-          <View style={[styles.profileCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.xl, borderColor: scheme.outlineVariant }]}>
-            <View style={[styles.avatar, { backgroundColor: scheme.primaryContainer }]}>
-              <Text style={[typography.title.large, { color: scheme.primary }]}>
-                {user.full_name?.charAt(0)?.toUpperCase() || "?"}
-              </Text>
-            </View>
-            <View style={{ marginLeft: spacing.md, flex: 1 }}>
-              <Text style={[typography.title.medium, { color: scheme.onSurface }]}>{user.full_name || "User"}</Text>
-              <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>{user.email}</Text>
-            </View>
-          </View>
-        )}
-
-        {isAnonymous && (
-          <View style={[styles.profileCard, { backgroundColor: scheme.surface, borderRadius: borderRadius.xl, borderColor: scheme.outlineVariant }]}>
-            <View style={[styles.avatar, { backgroundColor: scheme.secondaryContainer }]}>
-              <Ionicons name="eye-off" size={24} color={scheme.secondary} />
-            </View>
-            <View style={{ marginLeft: spacing.md, flex: 1 }}>
-              <Text style={[typography.title.medium, { color: scheme.onSurface }]}>Anonymous Reporter</Text>
-              <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>Your identity is protected</Text>
-            </View>
-          </View>
-        )}
-
-        <Divider />
-
-        <Pressable style={styles.menuItem} onPress={() => {}}>
-          <Ionicons name="shield-outline" size={22} color={scheme.onSurface} />
-          <Text style={[typography.body.large, { color: scheme.onSurface, flex: 1, marginLeft: spacing.md }]}>Privacy & Security</Text>
-          <Ionicons name="chevron-forward" size={18} color={scheme.onSurfaceVariant} />
-        </Pressable>
-
-        <Pressable style={styles.menuItem} onPress={() => {}}>
-          <Ionicons name="notifications-outline" size={22} color={scheme.onSurface} />
-          <Text style={[typography.body.large, { color: scheme.onSurface, flex: 1, marginLeft: spacing.md }]}>Notification Preferences</Text>
-          <Ionicons name="chevron-forward" size={18} color={scheme.onSurfaceVariant} />
-        </Pressable>
-
-        <Pressable style={styles.menuItem} onPress={() => {}}>
-          <Ionicons name="information-circle-outline" size={22} color={scheme.onSurface} />
-          <Text style={[typography.body.large, { color: scheme.onSurface, flex: 1, marginLeft: spacing.md }]}>About</Text>
-          <Text style={[typography.body.small, { color: scheme.onSurfaceVariant }]}>v1.0.0</Text>
-        </Pressable>
-
-        <Divider />
-
-        <Button
-          title="Sign Out"
-          variant="outlined"
-          size="lg"
-          onPress={confirmLogout}
-          loading={loggingOut}
-          style={{ width: "100%", marginTop: spacing.md }}
-        />
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const logout = async () => { setLoggingOut(true); try { const refresh = await SecureStore.getItemAsync(refreshStorageKey); if (refresh) await authApi.logout(refresh).catch(() => undefined); } finally { await clearAuth(); router.replace("/(auth)"); } };
+  const confirmLogout = () => { if (Platform.OS === "web") logout(); else Alert.alert("Sign out", "Are you sure you want to sign out?", [{ text: "Cancel", style: "cancel" }, { text: "Sign out", style: "destructive", onPress: logout }]); };
+  const menu = [{ icon: "shield-checkmark-outline", label: "Privacy & security", text: isAnonymous ? "Your identity is protected" : "Manage your account privacy" }, { icon: "information-circle-outline", label: "About Sauti Yako", text: "Support and safeguarding at SUZA" }];
+  return <SafeAreaView style={styles.safeArea} edges={["top"]}><StatusBar style="dark" /><View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View><ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}><Text style={styles.eyebrow}>ACCOUNT</Text><Text style={styles.title}>Settings</Text><View style={styles.profile}><View style={styles.avatar}><Ionicons name={isAnonymous ? "eye-off-outline" : "person-outline"} size={25} color="#813BBC" /></View><View style={styles.profileCopy}><Text style={styles.profileTitle}>{isAnonymous ? "Anonymous reporter" : user?.full_name || "Your account"}</Text><Text style={styles.profileSub}>{isAnonymous ? "Your identity is protected" : user?.email || "Private account"}</Text></View></View><Text style={styles.section}>YOUR SPACE</Text>{menu.map((item) => <Pressable key={item.label} style={({ pressed }) => [styles.menu, pressed && styles.pressed]}><View style={styles.menuIcon}><Ionicons name={item.icon as never} size={19} color="#813BBC" /></View><View style={styles.menuCopy}><Text style={styles.menuTitle}>{item.label}</Text><Text style={styles.menuSub}>{item.text}</Text></View><Ionicons name="chevron-forward" size={18} color="#918793" /></Pressable>)}<Pressable onPress={confirmLogout} disabled={loggingOut} style={({ pressed }) => [styles.signOut, pressed && styles.pressed]}><Ionicons name="log-out-outline" size={19} color="#914C63" /><Text style={styles.signOutText}>{loggingOut ? "Signing out…" : "Sign out"}</Text></Pressable></ScrollView></SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 40 },
-  profileCard: { flexDirection: "row", alignItems: "center", padding: 16, borderWidth: 1, marginBottom: 8 },
-  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
-  menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 16 },
-});
+const styles = StyleSheet.create({ safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" }, lilacArc: { position: "absolute", width: 620, height: 400, top: -285, left: -195, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 }, lilacArcInner: { position: "absolute", width: 540, height: 340, left: 90, top: 112, backgroundColor: "#F7EBFF", borderRadius: 270, opacity: 0.76 }, scroll: { paddingHorizontal: 28, paddingTop: 29, paddingBottom: 35 }, eyebrow: { color: "#7E36B7", fontSize: 11, letterSpacing: 1.8, fontWeight: "800", marginBottom: 8 }, title: { color: "#09080A", fontSize: 32, lineHeight: 36, fontWeight: "700", letterSpacing: -1.2 }, profile: { flexDirection: "row", alignItems: "center", marginTop: 27, borderRadius: 24, borderWidth: 1.1, borderColor: "#DDD5E0", backgroundColor: "rgba(255,255,255,0.72)", padding: 16 }, avatar: { width: 49, height: 49, borderRadius: 25, backgroundColor: "#F1E2FD", alignItems: "center", justifyContent: "center", marginRight: 12 }, profileCopy: { flex: 1 }, profileTitle: { color: "#302C33", fontSize: 15.5, fontWeight: "800" }, profileSub: { color: "#817B84", fontSize: 12, marginTop: 4 }, section: { color: "#7E36B7", fontSize: 10.5, fontWeight: "800", letterSpacing: 1.35, marginTop: 29, marginBottom: 10 }, menu: { flexDirection: "row", alignItems: "center", minHeight: 74, borderRadius: 21, borderWidth: 1.1, borderColor: "#DDD5E0", backgroundColor: "rgba(255,255,255,0.72)", paddingHorizontal: 13, marginBottom: 9 }, menuIcon: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#F1E2FD", alignItems: "center", justifyContent: "center", marginRight: 11 }, menuCopy: { flex: 1 }, menuTitle: { color: "#302C33", fontSize: 14, fontWeight: "800" }, menuSub: { color: "#817B84", fontSize: 11.5, marginTop: 3 }, signOut: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 54, borderRadius: 27, borderWidth: 1, borderColor: "#E4CDD5", backgroundColor: "#FFF8FA", marginTop: 28 }, signOutText: { color: "#914C63", fontSize: 14.5, fontWeight: "800" }, pressed: { transform: [{ scale: 0.985 }], opacity: 0.88 } });
