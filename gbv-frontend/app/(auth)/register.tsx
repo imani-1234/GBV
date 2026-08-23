@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,57 +17,41 @@ import { z } from "zod";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AxiosError } from "axios";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/theme/ThemeProvider";
-import { Button, TextField } from "../../src/components/ui";
+import { StatusBar } from "expo-status-bar";
 import { authApi } from "../../src/api/auth";
 import { useAuthStore } from "../../src/stores/authStore";
-import type { User } from "../../src/types";
 
+const LILAC = "#A95BEA";
 const registerSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Enter a valid email address"),
-  phone: z.string().optional(),
-  department: z.string().optional(),
-  password: z.string().min(1, "Password is required"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
+  password: z.string().min(8, "Use at least 8 characters"),
 });
-
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
-  const login = useAuthStore((s) => s.login);
+  const login = useAuthStore((state) => state.login);
   const [apiError, setApiError] = useState<string | null>(null);
-
-  const { control, handleSubmit, formState: { errors, isValid, isSubmitting } } = useForm<RegisterFormData>({
+  const [showPassword, setShowPassword] = useState(false);
+  const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     mode: "onChange",
-    defaultValues: { fullName: "", email: "", phone: "", department: "", password: "", confirmPassword: "" },
+    defaultValues: { fullName: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
     try {
-      await authApi.register({
-        full_name: data.fullName,
-        email: data.email,
-        password: data.password,
-        phone_number: data.phone || undefined,
-      });
+      await authApi.register({ full_name: data.fullName, email: data.email, password: data.password });
       const tokens = await authApi.login({ email: data.email, password: data.password });
       await useAuthStore.getState().setTokens(tokens);
       const user = await authApi.getProfile(tokens.access);
       await login(tokens, user);
       router.replace("/(reporter)");
-    } catch (err) {
-      if (err instanceof AxiosError && err.response?.data) {
-        const detail = err.response.data.detail || err.response.data.error;
-        if (detail) setApiError(detail);
-        else setApiError("Registration failed. Please try again.");
+    } catch (error) {
+      if (error instanceof AxiosError && error.response?.data) {
+        setApiError(error.response.data.detail || error.response.data.error || "Registration failed. Please try again.");
       } else {
         setApiError("Network error. Please check your connection.");
       }
@@ -65,66 +59,93 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Ionicons name="arrow-back" size={24} color={scheme.onBackground} />
-        </Pressable>
-
-        <Text style={[typography.headline.small, { color: scheme.onBackground, marginBottom: spacing.xs }]}>
-          Create Account
-        </Text>
-        <Text style={[typography.body.large, { color: scheme.onSurfaceVariant, marginBottom: spacing.lg }]}>
-          Join with your identity for proffessional support.
-        </Text>
-
-        {apiError && (
-          <View style={[styles.apiError, { backgroundColor: scheme.errorContainer, borderRadius: borderRadius.md }]}>
-            <Text style={[typography.body.small, { color: scheme.onErrorContainer }]}>{apiError}</Text>
-          </View>
-        )}
-
-        <Controller control={control} name="fullName" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Full Name" value={value} onChangeText={onChange} onBlur={onBlur} error={errors.fullName?.message} containerStyle={{ marginBottom: spacing.sm }} />
-        )} />
-
-        <Controller control={control} name="email" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Email" value={value} onChangeText={onChange} onBlur={onBlur} error={errors.email?.message} keyboardType="email-address" autoCapitalize="none" containerStyle={{ marginBottom: spacing.sm }} />
-        )} />
-
-        <Controller control={control} name="phone" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Phone (optional)" value={value || ""} onChangeText={onChange} onBlur={onBlur} error={errors.phone?.message} keyboardType="phone-pad" containerStyle={{ marginBottom: spacing.sm }} />
-        )} />
-
-        <Controller control={control} name="department" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Department / Faculty (optional)" value={value || ""} onChangeText={onChange} onBlur={onBlur} error={errors.department?.message} containerStyle={{ marginBottom: spacing.sm }} />
-        )} />
-
-        <Controller control={control} name="password" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Password" value={value} onChangeText={onChange} onBlur={onBlur} error={errors.password?.message} secureTextEntry containerStyle={{ marginBottom: spacing.sm }} />
-        )} />
-
-        <Controller control={control} name="confirmPassword" render={({ field: { onChange, onBlur, value } }) => (
-          <TextField label="Confirm Password" value={value} onChangeText={onChange} onBlur={onBlur} error={errors.confirmPassword?.message} secureTextEntry containerStyle={{ marginBottom: spacing.lg }} />
-        )} />
-
-        <Button title="Create Account" variant="filled" size="lg" onPress={handleSubmit(onSubmit)} disabled={!isValid} loading={isSubmitting} style={{ width: "100%", marginBottom: spacing.md }} />
-
-        <View style={styles.footer}>
-          <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant }]}>Already have an account? </Text>
-          <Pressable onPress={() => router.push("/(auth)/login")}>
-            <Text style={[typography.body.medium, { color: scheme.primary, fontWeight: "600" }]}>Sign in</Text>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <StatusBar style="dark" />
+      <View pointerEvents="none" style={styles.lilacArc}>
+        <View style={styles.lilacArcInner} />
+      </View>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+            <Ionicons name="chevron-back" size={31} color="#141115" />
           </Pressable>
-        </View>
-      </ScrollView>
+          <View style={styles.content}>
+            <Text style={styles.title}>Create account</Text>
+            <View style={styles.captionRow}>
+              <Text style={styles.caption}>Already have an account? </Text>
+              <Pressable onPress={() => router.replace("/(auth)/login")} hitSlop={8}>
+                <Text style={styles.captionLink}>sign in</Text>
+              </Pressable>
+            </View>
+
+            {apiError ? <Text style={styles.errorText}>{apiError}</Text> : null}
+
+            <Controller
+              control={control}
+              name="fullName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputShell}><TextInput value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Name" placeholderTextColor="#8D8A91" style={styles.textInput} accessibilityLabel="Full name" /></View>
+                  {errors.fullName?.message ? <Text style={styles.fieldError}>{errors.fullName.message}</Text> : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputShell}><TextInput value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Email or phone" placeholderTextColor="#8D8A91" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} style={styles.textInput} accessibilityLabel="Email address" /></View>
+                  {errors.email?.message ? <Text style={styles.fieldError}>{errors.email.message}</Text> : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputShell}>
+                    <TextInput value={value} onChangeText={onChange} onBlur={onBlur} placeholder="Password" placeholderTextColor="#8D8A91" secureTextEntry={!showPassword} autoCapitalize="none" style={styles.textInput} accessibilityLabel="Password" />
+                    <Pressable onPress={() => setShowPassword((visible) => !visible)} hitSlop={8}><Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#8D8A91" /></Pressable>
+                  </View>
+                  {errors.password?.message ? <Text style={styles.fieldError}>{errors.password.message}</Text> : null}
+                </View>
+              )}
+            />
+
+            <Pressable
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed, isSubmitting && styles.buttonDisabled]}
+            >
+              {isSubmitting ? <ActivityIndicator color="#FFFFFF" /> : <><Text style={styles.buttonText}>Sign up</Text><Ionicons name="log-in-outline" size={24} color="#FFFFFF" /></>}
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 40 },
-  back: { marginBottom: 16, alignSelf: "flex-start" },
-  apiError: { padding: 12, marginBottom: 16 },
-  footer: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 8 },
+  flex: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  scroll: { flexGrow: 1, minHeight: "100%" },
+  lilacArc: { position: "absolute", width: 620, height: 500, top: -205, left: -35, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 550, height: 410, left: -75, top: 88, backgroundColor: "#F7EBFF", borderRadius: 275, opacity: 0.76 },
+  backButton: { position: "absolute", top: 15, left: 35, zIndex: 2, padding: 4 },
+  content: { paddingHorizontal: 48, paddingTop: 312, paddingBottom: 48 },
+  title: { color: "#070707", fontSize: 37, lineHeight: 44, fontWeight: "700", letterSpacing: -1.2 },
+  captionRow: { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 27 },
+  caption: { color: "#767178", fontSize: 16, lineHeight: 21, fontWeight: "400" },
+  captionLink: { color: "#8038BF", fontSize: 16, lineHeight: 21, fontWeight: "700" },
+  errorText: { color: "#B3261E", fontSize: 13, marginBottom: 10, lineHeight: 18 },
+  inputShell: { minHeight: 61, borderWidth: 1.4, borderColor: "#B6B1B6", borderRadius: 32, flexDirection: "row", alignItems: "center", paddingHorizontal: 20, marginBottom: 20, backgroundColor: "rgba(255,255,255,0.58)" },
+  textInput: { flex: 1, paddingVertical: 0, color: "#252228", fontSize: 16, minHeight: 58 },
+  fieldError: { color: "#B3261E", fontSize: 12, marginTop: -14, marginBottom: 14, marginLeft: 15 },
+  primaryButton: { minWidth: 151, height: 61, borderRadius: 31, backgroundColor: LILAC, alignSelf: "flex-end", marginTop: 52, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 21, shadowColor: "#A75CDF", shadowOpacity: 0.22, shadowRadius: 9, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  buttonPressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
+  buttonDisabled: { opacity: 0.72 },
+  buttonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "700" },
 });
