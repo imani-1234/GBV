@@ -2,6 +2,7 @@ import { View, StyleSheet } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBreakpoint, isWide } from "../../src/hooks/useBreakpoint";
 import { TabBar, SideRail } from "../../src/components/navigation";
 import type { TabDefinition } from "../../src/components/navigation/TabBar";
@@ -25,6 +26,7 @@ function getActiveTab(pathname: string): string {
 export default function OfficerLayout() {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const bp = useBreakpoint();
   const wide = isWide(bp);
   const activeTab = getActiveTab(pathname);
@@ -39,7 +41,7 @@ export default function OfficerLayout() {
       <View style={styles.row}>
         {wide && <SideRail tabs={tabs} activeTab={activeTab} onTabPress={handleTabPress} />}
         <View style={styles.content}>
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack screenOptions={({ route }) => ({ headerShown: false, contentStyle: ["index", "cases/index"].includes(route.name) ? undefined : { paddingTop: insets.top + 10, backgroundColor: "#FEFDFE" } })}>
             <Stack.Screen name="index" />
             <Stack.Screen name="cases/index" />
             <Stack.Screen name="cases/[id]" />

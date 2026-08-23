@@ -580,7 +580,7 @@ export default function CasesList() {
       <View style={styles.queueScreen}>
         <StatusBar style="dark" />
         <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
-        <View style={styles.queueHeading}>
+        <View style={[styles.queueHeading, { paddingTop: Math.max(insets.top + 24, 58) }]}>
           <Text style={styles.queueEyebrow}>PRIVATE CASEWORK</Text>
           <Text style={styles.queueTitle}>{"Case\nqueue."}</Text>
           <Text style={styles.queueSubtitle}>Review, protect, and move each assigned case forward.</Text>

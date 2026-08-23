@@ -77,3 +77,9 @@
 - [x] Replace the administrator mobile side panel with a reporter-style primary navigation and a compact governance navigation entry point.
 - [x] Refine the administrator shell across phone and wide layouts while preserving every governance route.
 - [x] Validate administrator routing, tests, and production export, then commit and push the navigation refinement.
+
+## Mobile Status-Bar Content Spacing
+
+- [x] Audit top spacing and safe-area inset handling across all mobile route groups.
+- [x] Add consistent content spacing below the system status bar without reintroducing visible safe-area background bands.
+- [x] Validate mobile spacing refinement with tests and production export, then commit and push.
