@@ -1,91 +1,67 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../src/theme/ThemeProvider";
+import { StatusBar } from "expo-status-bar";
 
 export default function ReportingModeScreen() {
   const router = useRouter();
-  const { scheme, spacing, borderRadius, typography } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: scheme.background }]}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+      <StatusBar style="dark" />
+      <View pointerEvents="none" style={styles.lilacArc}><View style={styles.lilacArcInner} /></View>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
-          <Ionicons name="arrow-back" size={24} color={scheme.onBackground} />
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Ionicons name="chevron-back" size={31} color="#141115" />
         </Pressable>
+        <View style={styles.content}>
+          <Text style={styles.title}>How would you{`\n`}like to report?</Text>
+          <Text style={styles.subtitle}>Choose the option that feels safest for you.</Text>
 
-        <Text style={[typography.headline.small, { color: scheme.onBackground, marginBottom: spacing.xs }]}>
-          How would you like to report?
-        </Text>
-        <Text style={[typography.body.large, { color: scheme.onSurfaceVariant, marginBottom: spacing.xl }]}>
-          Choose the option that feels safest for you. You can always change your mind later.
-        </Text>
+          <Pressable onPress={() => router.push("/(auth)/register")} style={({ pressed }) => [styles.choiceCard, pressed && styles.cardPressed]}>
+            <View style={styles.iconCircle}><Ionicons name="person-outline" size={24} color="#813BBC" /></View>
+            <View style={styles.choiceBody}>
+              <Text style={styles.choiceTitle}>With my identity</Text>
+              <Text style={styles.choiceText}>Share your name and contact details so our support team can follow up.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={21} color="#813BBC" />
+          </Pressable>
 
-        {/* Identified Card */}
-        <Pressable
-          onPress={() => router.push("/(auth)/register")}
-          style={[styles.card, { backgroundColor: scheme.surface, borderRadius: borderRadius.xl, borderColor: scheme.outlineVariant }]}
-        >
-          <View style={[styles.cardIcon, { backgroundColor: scheme.primaryContainer }]}>
-            <Ionicons name="person" size={28} color={scheme.primary} />
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={[typography.title.medium, { color: scheme.onSurface }]}>
-              Report with my identity
-            </Text>
-            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: spacing.xs }]}>
-              Share your name and contact information. This makes it easier for our support team to follow up with you, 
-              provide updates, and offer personalised assistance throughout the process.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={scheme.onSurfaceVariant} />
-        </Pressable>
+          <Pressable onPress={() => router.push("/(auth)/anonymous-access")} style={({ pressed }) => [styles.choiceCard, pressed && styles.cardPressed]}>
+            <View style={styles.iconCircle}><Ionicons name="eye-off-outline" size={24} color="#813BBC" /></View>
+            <View style={styles.choiceBody}>
+              <Text style={styles.choiceTitle}>Anonymously</Text>
+              <Text style={styles.choiceText}>No name, email, or personal details. You will receive a private Reporter Code.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={21} color="#813BBC" />
+          </Pressable>
 
-        {/* Anonymous Card */}
-        <Pressable
-          onPress={() => router.push("/(auth)/anonymous-access")}
-          style={[styles.card, { backgroundColor: scheme.surface, borderRadius: borderRadius.xl, borderColor: scheme.secondary, borderWidth: 1 }]}
-        >
-          <View style={[styles.cardIcon, { backgroundColor: scheme.secondaryContainer }]}>
-            <Ionicons name="eye-off" size={28} color={scheme.secondary} />
+          <View style={styles.assurance}>
+            <Ionicons name="shield-checkmark-outline" size={18} color="#8B475F" />
+            <Text style={styles.assuranceText}>Both options are private and handled with care.</Text>
           </View>
-          <View style={styles.cardBody}>
-            <Text style={[typography.title.medium, { color: scheme.onSurface }]}>
-              Report anonymously
-            </Text>
-            <Text style={[typography.body.medium, { color: scheme.onSurfaceVariant, marginTop: spacing.xs }]}>
-              No name, no email, no personal details ever stored. You will receive a unique Reporter Code 
-              to track your report. Once lost, it cannot be recovered — so keep it safe.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={scheme.onSurfaceVariant} />
-        </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 40 },
-  back: { marginBottom: 24, alignSelf: "flex-start" },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    boxShadow: "0px 2px 8px rgba(0,0,0,0.06)",
-    elevation: 2,
-  },
-  cardIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  cardBody: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: "#FEFDFE", overflow: "hidden" },
+  scroll: { flexGrow: 1, minHeight: "100%" },
+  lilacArc: { position: "absolute", width: 620, height: 500, top: -205, left: -35, backgroundColor: "#E1C1FC", borderRadius: 310, opacity: 0.92 },
+  lilacArcInner: { position: "absolute", width: 550, height: 410, left: -75, top: 88, backgroundColor: "#F7EBFF", borderRadius: 275, opacity: 0.76 },
+  backButton: { position: "absolute", top: 15, left: 35, zIndex: 2, padding: 4 },
+  content: { paddingHorizontal: 36, paddingTop: 274, paddingBottom: 42 },
+  title: { color: "#070707", fontSize: 35, lineHeight: 40, fontWeight: "700", letterSpacing: -1.35 },
+  subtitle: { color: "#767178", fontSize: 15.5, lineHeight: 22, marginTop: 15, marginBottom: 34 },
+  choiceCard: { minHeight: 136, flexDirection: "row", alignItems: "center", borderWidth: 1.4, borderColor: "#B9B2BC", borderRadius: 25, backgroundColor: "rgba(255,255,255,0.72)", padding: 17, marginBottom: 15, shadowColor: "#A75CDF", shadowOpacity: 0.04, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
+  cardPressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
+  iconCircle: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", backgroundColor: "#F1E2FD", marginRight: 13, alignSelf: "flex-start" },
+  choiceBody: { flex: 1, paddingRight: 7 },
+  choiceTitle: { color: "#232026", fontSize: 17, fontWeight: "700", lineHeight: 22 },
+  choiceText: { color: "#7D7780", fontSize: 13, lineHeight: 19, marginTop: 5 },
+  assurance: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 22, backgroundColor: "#FFF8FA", borderWidth: 1, borderColor: "#EBD6DE" },
+  assuranceText: { flex: 1, color: "#8B475F", fontSize: 12.5, lineHeight: 17, fontWeight: "600" },
 });

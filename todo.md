@@ -21,3 +21,9 @@
 
 - [x] Redesign the React Native welcome screen to share the lilac arc, spacious hierarchy, and purple pill controls used by login and registration.
 - [x] Validate welcome navigation to the existing sign-in and account-creation flows, then commit and push the update.
+
+## Mobile Help and Reporting-Mode Reference Alignment
+
+- [x] Redesign the Immediate Help screen with the lilac arc, white canvas, and purple control language used across mobile authentication.
+- [x] Redesign the report-mode choice screen with reference-aligned layout while preserving identified and anonymous reporting routes.
+- [x] Validate support and reporting navigation, then commit and push the update.
